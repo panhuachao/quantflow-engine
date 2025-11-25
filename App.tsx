@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AppView, WorkflowMeta, DashboardMeta, StrategyItem, BacktestReport } from './types';
 import { LayoutDashboard, Workflow, LineChart, Settings, Bell, Search, User, ChevronRight, ArrowLeft, Code2, ClipboardList } from 'lucide-react';
@@ -10,6 +9,7 @@ import { StrategyList } from './components/StrategyList';
 import { StrategyEditor } from './components/StrategyEditor';
 import { BacktestList } from './components/BacktestList';
 import { BacktestDetail } from './components/BacktestDetail';
+import { MarketAnalysis } from './components/MarketAnalysis';
 import { MOCK_BACKTEST_REPORTS, MOCK_REPORT_HTML } from './constants';
 
 export default function App() {
@@ -146,13 +146,7 @@ export default function App() {
          return <BacktestList reports={backtestReports} onSelect={(r) => setSelectedBacktest(r)} />;
 
       case AppView.MARKET:
-        return (
-          <div className="p-10 flex flex-col items-center justify-center h-full text-slate-500">
-             <LineChart size={64} className="mb-4 opacity-20" />
-             <h2 className="text-xl font-semibold">Market Analysis Module</h2>
-             <p className="max-w-md text-center mt-2">Advanced charting and data visualization tools would populate this view.</p>
-          </div>
-        );
+        return <MarketAnalysis />;
         
       default:
         return null;
