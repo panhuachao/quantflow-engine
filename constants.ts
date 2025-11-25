@@ -372,7 +372,7 @@ export const MOCK_REPORT_HTML = `
   </div>
 </body>
 </html>
-
+`
 export const MOCK_BACKTEST_REPORTS: BacktestReport[] = [
   {
     id: 'bt-1',
