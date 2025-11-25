@@ -37,7 +37,8 @@ export enum AppView {
   DASHBOARD = 'DASHBOARD',
   WORKFLOW = 'WORKFLOW',
   MARKET = 'MARKET',
-  STRATEGIES = 'STRATEGIES', // New View
+  STRATEGIES = 'STRATEGIES',
+  BACKTESTS = 'BACKTESTS', // New View
 }
 
 export interface StrategyConfig {
@@ -57,6 +58,28 @@ export interface StrategyItem {
   framework: 'backtrader';
   updatedAt: string;
   tags: string[];
+}
+
+// --- Backtest Module Types ---
+
+export interface BacktestReport {
+  id: string;
+  strategyId: string;
+  strategyName: string;
+  symbol: string;
+  interval: string;
+  startDate: string;
+  endDate: string;
+  initialCash: number;
+  finalValue: number;
+  returnPct: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  tradeCount: number;
+  winRate: number;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: string;
+  reportHtml?: string; // HTML content for the iframe
 }
 
 // --- Dashboard Extensions ---

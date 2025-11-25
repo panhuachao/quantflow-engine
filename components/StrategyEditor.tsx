@@ -2,16 +2,29 @@
 import React, { useState } from 'react';
 import { StrategyItem } from '../types';
 import { Button } from './ui/Button';
-import { Play, Save, Settings, Code } from 'lucide-react';
+import { Play, Save, Settings, Code, Activity } from 'lucide-react';
 
 interface StrategyEditorProps {
   strategy: StrategyItem;
   onSave: (strategy: StrategyItem) => void;
+  onRunBacktest?: (strategy: StrategyItem) => void;
 }
 
-export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave }) => {
+export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave, onRunBacktest }) => {
   const [code, setCode] = useState(strategy.code);
   const [name, setName] = useState(strategy.name);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const handleRun = () => {
+    if (onRunBacktest) {
+        setIsRunning(true);
+        // Simulate local delay before handing off to app level
+        setTimeout(() => {
+            setIsRunning(false);
+            onRunBacktest({ ...strategy, code, name });
+        }, 800);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-950">
@@ -33,7 +46,15 @@ export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave
             <Button variant="secondary" size="sm" icon={<Settings size={14}/>}>Config</Button>
             <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => onSave({ ...strategy, code, name })}>Save</Button>
             <div className="w-px h-6 bg-slate-700 mx-1" />
-            <Button size="sm" className="bg-green-600 hover:bg-green-500" icon={<Play size={14}/>}>Run Backtest</Button>
+            <Button 
+                size="sm" 
+                className="bg-green-600 hover:bg-green-500" 
+                icon={<Play size={14}/>}
+                onClick={handleRun}
+                isLoading={isRunning}
+            >
+                Run Backtest
+            </Button>
          </div>
       </div>
 

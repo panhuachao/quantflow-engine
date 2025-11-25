@@ -1,5 +1,5 @@
 
-import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta, StrategyItem } from './types';
+import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
 export const INITIAL_NODES = [
   {
@@ -282,5 +282,123 @@ class RsiStrategy(bt.Strategy):
             if self.rsi > self.params.rsi_high:
                 self.close()
 `
+  }
+];
+
+// --- Mock HTML Report Content ---
+export const MOCK_REPORT_HTML = `
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: sans-serif; background: #0f172a; color: #cbd5e1; padding: 20px; }
+  .chart-container { background: #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+  h2 { color: #f8fafc; margin-top: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+  .stat { background: #0f172a; padding: 15px; border-radius: 6px; border: 1px solid #334155; }
+  .stat label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; }
+  .stat value { font-size: 18px; font-weight: bold; color: #f1f5f9; }
+  .green { color: #4ade80; } .red { color: #f87171; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; font-size: 14px; }
+  th { color: #94a3b8; }
+</style>
+</head>
+<body>
+  <div class="chart-container">
+    <h2>Performance Overview</h2>
+    <div style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; gap: 4px;">
+       <!-- Fake Chart Bars -->
+       <div style="height: 40%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 55%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 45%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 70%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 85%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 80%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+       <div style="height: 95%; width: 100%; background: #3b82f6; opacity: 0.5;"></div>
+    </div>
+    <p style="text-align: center; margin-top: 10px; color: #64748b; font-size: 12px;">Cumulative Returns (Equity Curve Simulation)</p>
+  </div>
+
+  <div class="grid">
+     <div class="stat"><label>Total Return</label><value class="green">+45.2%</value></div>
+     <div class="stat"><label>Sharpe Ratio</label><value>1.85</value></div>
+     <div class="stat"><label>Max Drawdown</label><value class="red">-12.4%</value></div>
+     <div class="stat"><label>Trades</label><value>142</value></div>
+  </div>
+
+  <div class="chart-container" style="margin-top: 20px;">
+     <h2>Recent Trades</h2>
+     <table>
+       <thead><tr><th>Date</th><th>Type</th><th>Price</th><th>Size</th><th>PnL</th></tr></thead>
+       <tbody>
+         <tr><td>2023-10-01</td><td class="green">BUY</td><td>$142.50</td><td>100</td><td>-</td></tr>
+         <tr><td>2023-10-05</td><td class="red">SELL</td><td>$148.20</td><td>100</td><td class="green">+$570.00</td></tr>
+         <tr><td>2023-10-08</td><td class="green">BUY</td><td>$147.10</td><td>100</td><td>-</td></tr>
+         <tr><td>2023-10-12</td><td class="red">SELL</td><td>$145.50</td><td>100</td><td class="red">-$160.00</td></tr>
+       </tbody>
+     </table>
+  </div>
+</body>
+</html>
+`;
+
+export const MOCK_BACKTEST_REPORTS: BacktestReport[] = [
+  {
+    id: 'bt-1',
+    strategyId: 'st-1',
+    strategyName: 'Golden Cross Strategy',
+    symbol: 'SPY',
+    interval: '1d',
+    startDate: '2023-01-01',
+    endDate: '2023-10-01',
+    initialCash: 100000,
+    finalValue: 115400,
+    returnPct: 15.4,
+    sharpeRatio: 1.2,
+    maxDrawdown: -8.5,
+    tradeCount: 24,
+    winRate: 62.5,
+    status: 'completed',
+    createdAt: '2023-10-21 14:00',
+    reportHtml: MOCK_REPORT_HTML
+  },
+  {
+    id: 'bt-2',
+    strategyId: 'st-2',
+    strategyName: 'RSI Mean Reversion',
+    symbol: 'BTCUSDT',
+    interval: '1h',
+    startDate: '2023-09-01',
+    endDate: '2023-10-01',
+    initialCash: 10000,
+    finalValue: 12100,
+    returnPct: 21.0,
+    sharpeRatio: 2.1,
+    maxDrawdown: -14.2,
+    tradeCount: 156,
+    winRate: 48.2,
+    status: 'completed',
+    createdAt: '2023-10-21 16:30',
+    reportHtml: MOCK_REPORT_HTML
+  },
+  {
+    id: 'bt-3',
+    strategyId: 'st-1',
+    strategyName: 'Golden Cross Strategy',
+    symbol: 'AAPL',
+    interval: '1d',
+    startDate: '2022-01-01',
+    endDate: '2023-01-01',
+    initialCash: 100000,
+    finalValue: 92000,
+    returnPct: -8.0,
+    sharpeRatio: -0.4,
+    maxDrawdown: -22.0,
+    tradeCount: 12,
+    winRate: 33.3,
+    status: 'completed',
+    createdAt: '2023-10-10 09:15',
+    reportHtml: MOCK_REPORT_HTML
   }
 ];

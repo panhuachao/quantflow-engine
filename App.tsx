@@ -1,13 +1,16 @@
 
 import React, { useState } from 'react';
-import { AppView, WorkflowMeta, DashboardMeta, StrategyItem } from './types';
-import { LayoutDashboard, Workflow, LineChart, Settings, Bell, Search, User, ChevronRight, ArrowLeft, Code2 } from 'lucide-react';
+import { AppView, WorkflowMeta, DashboardMeta, StrategyItem, BacktestReport } from './types';
+import { LayoutDashboard, Workflow, LineChart, Settings, Bell, Search, User, ChevronRight, ArrowLeft, Code2, ClipboardList } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
 import { DashboardList } from './components/DashboardList';
 import { StrategyList } from './components/StrategyList';
 import { StrategyEditor } from './components/StrategyEditor';
+import { BacktestList } from './components/BacktestList';
+import { BacktestDetail } from './components/BacktestDetail';
+import { MOCK_BACKTEST_REPORTS, MOCK_REPORT_HTML } from './constants';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(AppView.WORKFLOW);
@@ -16,6 +19,10 @@ export default function App() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowMeta | null>(null);
   const [selectedDashboard, setSelectedDashboard] = useState<DashboardMeta | null>(null);
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyItem | null>(null);
+  const [selectedBacktest, setSelectedBacktest] = useState<BacktestReport | null>(null);
+  
+  // Global Data State (for simulation)
+  const [backtestReports, setBacktestReports] = useState<BacktestReport[]>(MOCK_BACKTEST_REPORTS);
 
   // Navigation Handlers
   const handleNavigate = (view: AppView) => {
@@ -24,19 +31,69 @@ export default function App() {
     if (view !== AppView.WORKFLOW) setSelectedWorkflow(null);
     if (view !== AppView.DASHBOARD) setSelectedDashboard(null);
     if (view !== AppView.STRATEGIES) setSelectedStrategy(null);
+    if (view !== AppView.BACKTESTS) setSelectedBacktest(null);
   };
 
   const handleBack = () => {
     if (currentView === AppView.WORKFLOW) setSelectedWorkflow(null);
     if (currentView === AppView.DASHBOARD) setSelectedDashboard(null);
     if (currentView === AppView.STRATEGIES) setSelectedStrategy(null);
+    if (currentView === AppView.BACKTESTS) setSelectedBacktest(null);
+  };
+
+  // Simulation Logic
+  const runBacktestSimulation = (strategy: StrategyItem) => {
+     // Create a new "pending" report
+     const newReport: BacktestReport = {
+        id: `bt-${Date.now()}`,
+        strategyId: strategy.id,
+        strategyName: strategy.name,
+        symbol: 'BTCUSDT', // Default for sim
+        interval: '1h',
+        startDate: '2023-01-01',
+        endDate: '2023-10-25',
+        initialCash: 100000,
+        finalValue: 0,
+        returnPct: 0,
+        sharpeRatio: 0,
+        maxDrawdown: 0,
+        tradeCount: 0,
+        winRate: 0,
+        status: 'pending',
+        createdAt: new Date().toLocaleString()
+     };
+     
+     // 1. Add pending report to list
+     const updatedReports = [newReport, ...backtestReports];
+     setBacktestReports(updatedReports);
+     
+     // 2. Navigate to Backtest List to show it's running
+     handleNavigate(AppView.BACKTESTS);
+
+     // 3. Simulate completion after 2 seconds
+     setTimeout(() => {
+        const completedReport: BacktestReport = {
+            ...newReport,
+            finalValue: 108500,
+            returnPct: 8.5,
+            sharpeRatio: 1.45,
+            maxDrawdown: -5.2,
+            tradeCount: 42,
+            winRate: 58.0,
+            status: 'completed',
+            reportHtml: MOCK_REPORT_HTML // Attach the mock HTML
+        };
+        setBacktestReports(prev => prev.map(r => r.id === newReport.id ? completedReport : r));
+        // Optionally auto-open the completed report
+        setSelectedBacktest(completedReport);
+     }, 2000);
   };
 
   const renderContent = () => {
     switch (currentView) {
       case AppView.WORKFLOW:
         if (selectedWorkflow) {
-          return <WorkflowCanvas />; // In real app, pass selectedWorkflow.id
+          return <WorkflowCanvas />;
         }
         return (
           <WorkflowList 
@@ -47,7 +104,7 @@ export default function App() {
       
       case AppView.DASHBOARD:
         if (selectedDashboard) {
-          return <Dashboard />; // In real app, pass selectedDashboard.id
+          return <Dashboard />;
         }
         return (
           <DashboardList 
@@ -58,7 +115,13 @@ export default function App() {
 
       case AppView.STRATEGIES:
         if (selectedStrategy) {
-          return <StrategyEditor strategy={selectedStrategy} onSave={(s) => setSelectedStrategy(s)} />;
+          return (
+            <StrategyEditor 
+               strategy={selectedStrategy} 
+               onSave={(s) => setSelectedStrategy(s)} 
+               onRunBacktest={runBacktestSimulation}
+            />
+          );
         }
         return (
           <StrategyList 
@@ -76,6 +139,12 @@ export default function App() {
           />
         );
       
+      case AppView.BACKTESTS:
+         if (selectedBacktest) {
+            return <BacktestDetail report={selectedBacktest} onBack={() => setSelectedBacktest(null)} />;
+         }
+         return <BacktestList reports={backtestReports} onSelect={(r) => setSelectedBacktest(r)} />;
+
       case AppView.MARKET:
         return (
           <div className="p-10 flex flex-col items-center justify-center h-full text-slate-500">
@@ -118,6 +187,15 @@ export default function App() {
         </div>
       );
     }
+    if (currentView === AppView.BACKTESTS && selectedBacktest) {
+        return (
+          <div className="flex items-center gap-2 text-sm">
+             <span className="text-slate-500 cursor-pointer hover:text-slate-300" onClick={handleBack}>Evaluations</span>
+             <ChevronRight size={14} className="text-slate-600" />
+             <span className="font-medium text-slate-200">{selectedBacktest.strategyName}</span>
+          </div>
+        );
+      }
     return null;
   };
 
@@ -145,6 +223,12 @@ export default function App() {
             active={currentView === AppView.STRATEGIES} 
             onClick={() => handleNavigate(AppView.STRATEGIES)}
             label="Algos"
+          />
+          <SidebarItem 
+            icon={<ClipboardList size={24} />} 
+            active={currentView === AppView.BACKTESTS} 
+            onClick={() => handleNavigate(AppView.BACKTESTS)}
+            label="Evals"
           />
           <SidebarItem 
             icon={<LayoutDashboard size={24} />} 
@@ -175,7 +259,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             
             {/* Conditional Back Button or Title */}
-            {(selectedWorkflow || selectedDashboard || selectedStrategy) ? (
+            {(selectedWorkflow || selectedDashboard || selectedStrategy || selectedBacktest) ? (
               <div className="flex items-center gap-4">
                 <button 
                   onClick={handleBack}
@@ -191,6 +275,7 @@ export default function App() {
                   {currentView === AppView.WORKFLOW && 'Workflow Orchestrator'}
                   {currentView === AppView.DASHBOARD && 'Dashboard Library'}
                   {currentView === AppView.STRATEGIES && 'Algorithm Library'}
+                  {currentView === AppView.BACKTESTS && 'Backtest Evaluations'}
                   {currentView === AppView.MARKET && 'Market Analysis'}
                 </h1>
                 <div className="h-4 w-px bg-slate-700 mx-2" />
@@ -204,7 +289,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {!selectedWorkflow && !selectedDashboard && !selectedStrategy && (
+            {!selectedWorkflow && !selectedDashboard && !selectedStrategy && !selectedBacktest && (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 <input 
