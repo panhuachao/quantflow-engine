@@ -2,7 +2,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS, NODE_COLORS, NODE_ICONS_COLOR } from '../constants';
-import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, X, Wand2, Code, Play, DownloadCloud, FileCode, Save, Server, Clock, AlertTriangle } from 'lucide-react';
+import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, X, Wand2, Code, Play, DownloadCloud, FileCode, Save, Server, Clock, AlertTriangle, Plus, Minus, Maximize, Move } from 'lucide-react';
 import { Button } from './ui/Button';
 import { generateStrategyCode } from '../services/geminiService';
 
@@ -13,25 +13,21 @@ const getBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
 
 // Cycle detection algorithm (DFS)
 const hasCycle = (sourceId: string, targetId: string, connections: Connection[]): boolean => {
-  // Build Adjacency List
   const adj = new Map<string, string[]>();
   connections.forEach(c => {
     if (!adj.has(c.sourceId)) adj.set(c.sourceId, []);
     adj.get(c.sourceId)?.push(c.targetId);
   });
 
-  // Temporarily add the proposed connection
   if (!adj.has(sourceId)) adj.set(sourceId, []);
   adj.get(sourceId)?.push(targetId);
 
-  // DFS to detect back edge to target or cycle involving new path
-  // Simpler check: Can we reach source from target? If yes, adding source->target creates loop.
   const stack = [targetId];
   const visited = new Set<string>();
 
   while (stack.length > 0) {
     const curr = stack.pop()!;
-    if (curr === sourceId) return true; // Found a path back to source
+    if (curr === sourceId) return true;
     
     if (!visited.has(curr)) {
       visited.add(curr);
@@ -58,10 +54,8 @@ const NodeIcon = ({ type, className }: { type: NodeType, className?: string }) =
   }
 };
 
-// Component to display node specific config summary
 const NodeSummary = ({ node }: { node: NodeData }) => {
   const { config, type } = node;
-
   switch (type) {
     case NodeType.DATA_COLLECT:
       return (
@@ -116,40 +110,98 @@ const NodeSummary = ({ node }: { node: NodeData }) => {
 export const WorkflowCanvas: React.FC = () => {
   const [nodes, setNodes] = useState<NodeData[]>(INITIAL_NODES);
   const [connections, setConnections] = useState<Connection[]>(INITIAL_CONNECTIONS);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   
-  // Node Dragging State
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Viewport State
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  
+  // Interaction State
   const [isDraggingNode, setIsDraggingNode] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   
   // Connection Dragging State
   const [connectingSourceId, setConnectingSourceId] = useState<string | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // Relative to canvas
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // World coordinates
   
   const canvasRef = useRef<HTMLDivElement>(null);
+  const lastMousePos = useRef({ x: 0, y: 0 }); // Screen coordinates for delta calc
 
   // Property Panel State
   const [nodePrompt, setNodePrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [cycleError, setCycleError] = useState<string | null>(null);
 
+  // Derived Selection
+  const singleSelectedNodeId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
+  const selectedNode = singleSelectedNodeId ? nodes.find(n => n.id === singleSelectedNodeId) : null;
+
+  // --- Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        // Select All (Ctrl + A)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+            e.preventDefault();
+            setSelectedIds(new Set(nodes.map(n => n.id)));
+        }
+        // Delete (Delete / Backspace)
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+            // Prevent deleting if typing in an input
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            
+            setNodes(nodes.filter(n => !selectedIds.has(n.id)));
+            setConnections(connections.filter(c => !selectedIds.has(c.sourceId) && !selectedIds.has(c.targetId)));
+            setSelectedIds(new Set());
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, connections, selectedIds]);
+
   // --- Handlers ---
 
-  const handleMouseDownNode = (e: React.MouseEvent, id: string, x: number, y: number) => {
-    e.stopPropagation();
-    setSelectedNodeId(id);
+  const handleMouseDownCanvas = (e: React.MouseEvent) => {
+    // Middle click or Space+Left click to pan
+    if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
+      setIsPanning(true);
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    } else if (e.button === 0) {
+      // Regular left click on canvas -> Clear selection
+      setSelectedIds(new Set());
+      setCycleError(null);
+    }
+  };
+
+  const handleMouseDownNode = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent canvas click
+    
+    const newSelected = new Set(selectedIds);
+    
+    // Multi-selection logic (Ctrl/Cmd click)
+    if (e.ctrlKey || e.metaKey) {
+        if (newSelected.has(id)) newSelected.delete(id);
+        else newSelected.add(id);
+        setSelectedIds(newSelected);
+    } else {
+        // If clicking a node that is NOT in the current selection, select ONLY it
+        // If clicking a node that IS in the selection, keep selection (for drag group)
+        if (!newSelected.has(id)) {
+            setSelectedIds(new Set([id]));
+        }
+    }
+
+    // Prepare for drag
     setIsDraggingNode(true);
     setCycleError(null);
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
     
-    // Find prompt if existing config
-    const n = nodes.find(node => node.id === id);
-    if(n) setNodePrompt(n.config.description || '');
-
-    const rect = (e.target as Element).getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - x, 
-      y: e.clientY - y
-    });
+    // Sync prompt if single selection
+    if (selectedIds.size <= 1) {
+        const n = nodes.find(node => node.id === id);
+        if(n) setNodePrompt(n.config.description || '');
+    }
   };
 
   const handleMouseDownOutput = (e: React.MouseEvent, sourceId: string) => {
@@ -158,12 +210,12 @@ export const WorkflowCanvas: React.FC = () => {
     setCycleError(null);
     setConnectingSourceId(sourceId);
     
-    // Initial mouse pos relative to canvas
+    // Calculate initial world position for the connection line
     if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         setMousePos({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: (e.clientX - rect.left - pan.x) / zoom,
+            y: (e.clientY - rect.top - pan.y) / zoom
         });
     }
   };
@@ -180,7 +232,6 @@ export const WorkflowCanvas: React.FC = () => {
         } else if (hasCycle(connectingSourceId, targetId, connections)) {
             setCycleError("Cannot connect: Cycle detected!");
         } else {
-            // Success
             const newConn: Connection = {
                 id: `c-${Date.now()}`,
                 sourceId: connectingSourceId,
@@ -194,25 +245,45 @@ export const WorkflowCanvas: React.FC = () => {
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (canvasRef.current) {
-        const canvasRect = canvasRef.current.getBoundingClientRect();
-        const x = e.clientX - canvasRect.left;
-        const y = e.clientY - canvasRect.top;
+    if (isPanning) {
+        const dx = e.clientX - lastMousePos.current.x;
+        const dy = e.clientY - lastMousePos.current.y;
+        setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        return;
+    }
 
-        if (isDraggingNode && selectedNodeId) {
-            setNodes(prev => prev.map(node => 
-                node.id === selectedNodeId ? { ...node, x: x - dragOffset.x, y: y - dragOffset.y } : node
-            ));
+    if (canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        
+        // World coordinates calculation
+        const worldX = (e.clientX - rect.left - pan.x) / zoom;
+        const worldY = (e.clientY - rect.top - pan.y) / zoom;
+
+        if (isDraggingNode && selectedIds.size > 0) {
+            // Calculate delta in WORLD space (screen delta / zoom)
+            const dx = (e.clientX - lastMousePos.current.x) / zoom;
+            const dy = (e.clientY - lastMousePos.current.y) / zoom;
+
+            setNodes(prev => prev.map(node => {
+                if (selectedIds.has(node.id)) {
+                    return { ...node, x: node.x + dx, y: node.y + dy };
+                }
+                return node;
+            }));
+            
+            lastMousePos.current = { x: e.clientX, y: e.clientY };
         }
 
         if (connectingSourceId) {
-            setMousePos({ x, y });
+            setMousePos({ x: worldX, y: worldY });
         }
     }
-  }, [isDraggingNode, selectedNodeId, dragOffset, connectingSourceId]);
+  }, [isDraggingNode, selectedIds, connectingSourceId, zoom, pan, isPanning]);
 
   const handleMouseUp = useCallback(() => {
     setIsDraggingNode(false);
+    setIsPanning(false);
     setConnectingSourceId(null);
   }, []);
 
@@ -230,15 +301,15 @@ export const WorkflowCanvas: React.FC = () => {
   };
 
   const handleGenerateCode = async () => {
-    if (!selectedNodeId || !nodePrompt) return;
-    const node = nodes.find(n => n.id === selectedNodeId);
+    if (!singleSelectedNodeId || !nodePrompt) return;
+    const node = nodes.find(n => n.id === singleSelectedNodeId);
     if (!node || node.type !== NodeType.STRATEGY) return;
 
     setIsGenerating(true);
     const code = await generateStrategyCode(nodePrompt);
     
     setNodes(prev => prev.map(n => 
-      n.id === selectedNodeId ? { 
+      n.id === singleSelectedNodeId ? { 
         ...n, 
         config: { ...n.config, parameters: code, description: nodePrompt } 
       } : n
@@ -247,14 +318,12 @@ export const WorkflowCanvas: React.FC = () => {
   };
 
   const updateNodeConfig = (key: string, value: any) => {
-    if (!selectedNodeId) return;
+    if (!singleSelectedNodeId) return;
     setNodes(prev => prev.map(n => 
-      n.id === selectedNodeId ? { ...n, config: { ...n.config, [key]: value } } : n
+      n.id === singleSelectedNodeId ? { ...n, config: { ...n.config, [key]: value } } : n
     ));
   };
 
-  const selectedNode = nodes.find(n => n.id === selectedNodeId);
-  
   const draggableNodeTypes = [
     NodeType.TIMER,
     NodeType.DATA_COLLECT,
@@ -267,7 +336,7 @@ export const WorkflowCanvas: React.FC = () => {
   return (
     <div className="flex h-full">
       {/* Toolbar / Palette */}
-      <div className="w-16 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-4 gap-4 z-10">
+      <div className="w-16 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-4 gap-4 z-20 shadow-xl">
          {draggableNodeTypes.map(type => (
              <div key={type} 
               className="p-3 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 cursor-grab active:cursor-grabbing transition-colors"
@@ -276,12 +345,16 @@ export const WorkflowCanvas: React.FC = () => {
               onDragEnd={(e) => {
                 const rect = canvasRef.current?.getBoundingClientRect();
                 if (!rect) return;
+                // Calculate drop position in world coordinates
+                const x = (e.clientX - rect.left - pan.x) / zoom - 100;
+                const y = (e.clientY - rect.top - pan.y) / zoom - 40;
+                
                 const newNode: NodeData = {
                   id: Date.now().toString(),
                   type,
                   label: type === NodeType.TIMER ? 'Cron Timer' : `New ${type}`,
-                  x: e.clientX - rect.left - 100, // Center on mouse approx
-                  y: e.clientY - rect.top - 40,
+                  x,
+                  y,
                   config: {},
                   status: 'idle'
                 };
@@ -296,8 +369,9 @@ export const WorkflowCanvas: React.FC = () => {
       {/* Canvas */}
       <div 
         ref={canvasRef}
-        className="flex-1 bg-slate-950 relative overflow-hidden grid-bg"
-        onMouseDown={() => { setSelectedNodeId(null); setCycleError(null); }}
+        className="flex-1 bg-slate-950 relative overflow-hidden grid-bg cursor-default"
+        onMouseDown={handleMouseDownCanvas}
+        style={{ cursor: isPanning ? 'grabbing' : undefined }}
       >
         {/* Cycle Error Toast */}
         {cycleError && (
@@ -307,106 +381,149 @@ export const WorkflowCanvas: React.FC = () => {
             </div>
         )}
 
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          {/* Existing Connections */}
-          {connections.map(conn => {
-            const source = nodes.find(n => n.id === conn.sourceId);
-            const target = nodes.find(n => n.id === conn.targetId);
-            if (!source || !target) return null;
-            return (
-              <g key={conn.id} className="group pointer-events-auto cursor-pointer" onClick={() => deleteConnection(conn.id)}>
-                 <path
-                    d={getBezierPath(source.x + 200, source.y + 40, target.x, target.y + 40)}
-                    stroke="#475569"
-                    strokeWidth="2"
-                    fill="none"
-                    className="group-hover:stroke-red-500 transition-colors"
-                  />
-                  {/* Invisible wide path for easier clicking */}
-                  <path
-                    d={getBezierPath(source.x + 200, source.y + 40, target.x, target.y + 40)}
-                    stroke="transparent"
-                    strokeWidth="15"
-                    fill="none"
-                  />
-              </g>
-            );
-          })}
+        {/* Viewport Transform Container */}
+        <div 
+            style={{ 
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, 
+                transformOrigin: '0 0',
+                width: '100%',
+                height: '100%',
+                pointerEvents: isPanning ? 'none' : 'auto'
+            }}
+        >
+            <svg className="absolute overflow-visible top-0 left-0 w-full h-full pointer-events-none">
+            {/* Existing Connections */}
+            {connections.map(conn => {
+                const source = nodes.find(n => n.id === conn.sourceId);
+                const target = nodes.find(n => n.id === conn.targetId);
+                if (!source || !target) return null;
+                return (
+                <g key={conn.id} className="group pointer-events-auto cursor-pointer" onClick={() => deleteConnection(conn.id)}>
+                    <path
+                        d={getBezierPath(source.x + 200, source.y + 40, target.x, target.y + 40)}
+                        stroke="#475569"
+                        strokeWidth="2"
+                        fill="none"
+                        className="group-hover:stroke-red-500 transition-colors"
+                    />
+                    <path
+                        d={getBezierPath(source.x + 200, source.y + 40, target.x, target.y + 40)}
+                        stroke="transparent"
+                        strokeWidth="15"
+                        fill="none"
+                    />
+                </g>
+                );
+            })}
 
-          {/* Temporary Connection Line being dragged */}
-          {connectingSourceId && (
-              (() => {
-                  const source = nodes.find(n => n.id === connectingSourceId);
-                  if (source) {
-                      return (
-                          <path 
-                             d={getBezierPath(source.x + 200, source.y + 40, mousePos.x, mousePos.y)}
-                             stroke="#22d3ee"
-                             strokeWidth="2"
-                             strokeDasharray="5,5"
-                             fill="none"
-                          />
-                      )
-                  }
-                  return null;
-              })()
-          )}
-        </svg>
+            {/* Temporary Connection Line */}
+            {connectingSourceId && (
+                (() => {
+                    const source = nodes.find(n => n.id === connectingSourceId);
+                    if (source) {
+                        return (
+                            <path 
+                                d={getBezierPath(source.x + 200, source.y + 40, mousePos.x, mousePos.y)}
+                                stroke="#22d3ee"
+                                strokeWidth="2"
+                                strokeDasharray="5,5"
+                                fill="none"
+                            />
+                        )
+                    }
+                    return null;
+                })()
+            )}
+            </svg>
 
-        {nodes.map(node => (
-          <div
-            key={node.id}
-            style={{ left: node.x, top: node.y }}
-            className={`absolute w-[200px] bg-slate-800 rounded-lg border-l-4 ${NODE_COLORS[node.type]} ${selectedNodeId === node.id ? 'ring-2 ring-white ring-opacity-50' : ''} shadow-xl group transition-shadow`}
-            onMouseDown={(e) => handleMouseDownNode(e, node.id, node.x, node.y)}
-          >
-            {/* Header */}
-            <div className="p-3 border-b border-slate-700/50 flex items-center justify-between cursor-move select-none">
-              <div className="flex items-center gap-2 max-w-[150px]">
-                <NodeIcon type={node.type} className={NODE_ICONS_COLOR[node.type]} />
-                <span className="text-sm font-semibold text-slate-200 truncate">{node.label}</span>
-              </div>
-              {node.status === 'running' && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+            {nodes.map(node => (
+            <div
+                key={node.id}
+                style={{ transform: `translate(${node.x}px, ${node.y}px)` }}
+                className={`absolute w-[200px] bg-slate-800 rounded-lg border-l-4 ${NODE_COLORS[node.type]} 
+                  ${selectedIds.has(node.id) ? 'ring-2 ring-white ring-opacity-80 shadow-[0_0_15px_rgba(255,255,255,0.2)]' : ''} 
+                  shadow-xl group transition-shadow will-change-transform`}
+                onMouseDown={(e) => handleMouseDownNode(e, node.id)}
+            >
+                {/* Header */}
+                <div className="p-3 border-b border-slate-700/50 flex items-center justify-between cursor-move select-none">
+                <div className="flex items-center gap-2 max-w-[150px]">
+                    <NodeIcon type={node.type} className={NODE_ICONS_COLOR[node.type]} />
+                    <span className="text-sm font-semibold text-slate-200 truncate">{node.label}</span>
+                </div>
+                {node.status === 'running' && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                </div>
+                
+                {/* Body */}
+                <div className="p-3 bg-slate-900/50 rounded-b-lg min-h-[50px]">
+                <div className="text-[10px] text-slate-600 font-mono mb-1">ID: {node.id.substring(0,4)}</div>
+                
+                <NodeSummary node={node} />
+
+                {/* Connectors */}
+                <div 
+                    className="absolute top-1/2 -left-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
+                    onMouseUp={(e) => handleMouseUpInput(e, node.id)}
+                >
+                    <div className={`w-3 h-3 rounded-full border-2 transition-all duration-200 
+                        ${connectingSourceId && connectingSourceId !== node.id ? 'bg-cyan-400 border-cyan-200 scale-125 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-slate-600 border-slate-900'} 
+                        hover:bg-white cursor-crosshair`} 
+                    />
+                </div>
+                
+                <div 
+                    className="absolute top-1/2 -right-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
+                    onMouseDown={(e) => handleMouseDownOutput(e, node.id)}
+                >
+                    <div className="w-3 h-3 bg-slate-600 rounded-full border-2 border-slate-900 hover:bg-cyan-400 hover:border-white cursor-crosshair transition-colors" />
+                </div>
+                </div>
             </div>
+            ))}
+        </div>
+
+        {/* Zoom Controls (Bottom Left) */}
+        <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
+            <button 
+                onClick={() => setZoom(z => Math.max(0.2, z - 0.1))}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                title="Zoom Out"
+            >
+                <Minus size={16} />
+            </button>
+            <div className="text-xs font-mono text-slate-500 w-12 text-center select-none">
+                {Math.round(zoom * 100)}%
+            </div>
+            <button 
+                onClick={() => setZoom(z => Math.min(2.0, z + 0.1))}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                title="Zoom In"
+            >
+                <Plus size={16} />
+            </button>
+            <div className="w-px h-4 bg-slate-800 mx-1"/>
+            <button 
+                onClick={() => { setZoom(1); setPan({x: 0, y: 0}); }}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                title="Reset View"
+            >
+                <Maximize size={16} />
+            </button>
             
-            {/* Body */}
-            <div className="p-3 bg-slate-900/50 rounded-b-lg min-h-[50px]">
-               <div className="text-[10px] text-slate-600 font-mono mb-1">ID: {node.id.substring(0,4)}</div>
-               
-               {/* Enhanced Node Summary */}
-               <NodeSummary node={node} />
-
-               {/* Connectors */}
-               
-               {/* INPUT (Left) */}
-               <div 
-                 className="absolute top-1/2 -left-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
-                 onMouseUp={(e) => handleMouseUpInput(e, node.id)}
-               >
-                  <div className={`w-3 h-3 rounded-full border-2 transition-all duration-200 
-                      ${connectingSourceId && connectingSourceId !== node.id ? 'bg-cyan-400 border-cyan-200 scale-125 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-slate-600 border-slate-900'} 
-                      hover:bg-white cursor-crosshair`} 
-                  />
-               </div>
-               
-               {/* OUTPUT (Right) */}
-               <div 
-                 className="absolute top-1/2 -right-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
-                 onMouseDown={(e) => handleMouseDownOutput(e, node.id)}
-               >
-                  <div className="w-3 h-3 bg-slate-600 rounded-full border-2 border-slate-900 hover:bg-cyan-400 hover:border-white cursor-crosshair transition-colors" />
-               </div>
+            <div className="w-px h-4 bg-slate-800 mx-1"/>
+            <div className="flex items-center gap-2 px-2 text-[10px] text-slate-500">
+                <Move size={12} />
+                <span>Space + Drag</span>
             </div>
-          </div>
-        ))}
+        </div>
       </div>
 
-      {/* Properties Panel */}
-      {selectedNode && (
+      {/* Properties Panel (Right Sidebar) */}
+      {selectedNode ? (
         <div className="w-96 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto z-20 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Properties</h2>
-            <button onClick={() => setSelectedNodeId(null)} className="text-slate-400 hover:text-white">
+            <button onClick={() => setSelectedIds(new Set())} className="text-slate-400 hover:text-white">
               <X size={20} />
             </button>
           </div>
@@ -635,13 +752,26 @@ export const WorkflowCanvas: React.FC = () => {
                <Button variant="danger" size="sm" className="w-full" onClick={() => {
                  setNodes(nodes.filter(n => n.id !== selectedNode.id));
                  setConnections(connections.filter(c => c.sourceId !== selectedNode.id && c.targetId !== selectedNode.id));
-                 setSelectedNodeId(null);
+                 setSelectedIds(new Set());
                }}>
                  Delete Node
                </Button>
              </div>
           </div>
         </div>
+      ) : (
+        selectedIds.size > 1 && (
+            <div className="w-96 bg-slate-900 border-l border-slate-800 p-6 z-20 shadow-2xl flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 text-cyan-400">
+                    <Move size={32} />
+                </div>
+                <h2 className="text-lg font-bold text-white mb-2">{selectedIds.size} Nodes Selected</h2>
+                <p className="text-sm text-slate-400">Drag to move selection group.</p>
+                <div className="mt-6 w-full">
+                    <Button variant="secondary" className="w-full" onClick={() => setSelectedIds(new Set())}>Deselect All</Button>
+                </div>
+            </div>
+        )
       )}
       
       {/* Floating Execute Button */}
