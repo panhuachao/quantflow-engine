@@ -1,7 +1,9 @@
+
+
 import React from 'react';
 import { NodeData, NodeType } from '../../types';
 import { NODE_COLORS, NODE_ICONS_COLOR } from '../../constants';
-import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, DownloadCloud, FileCode, Save, Clock } from 'lucide-react';
+import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, DownloadCloud, FileCode, Save, Clock, Globe, Search } from 'lucide-react';
 import { NODE_CONTENT_REGISTRY, DefaultNodeContent } from './NodeContents';
 
 const NodeIcon = ({ type, className }: { type: NodeType, className?: string }) => {
@@ -15,6 +17,8 @@ const NodeIcon = ({ type, className }: { type: NodeType, className?: string }) =
     case NodeType.EXECUTION: return <PlayCircle size={18} className={className} />;
     case NodeType.STORAGE: return <Save size={18} className={className} />;
     case NodeType.TIMER: return <Clock size={18} className={className} />;
+    case NodeType.DATABASE_QUERY: return <Search size={18} className={className} />;
+    case NodeType.HTTP_REQUEST: return <Globe size={18} className={className} />;
     default: return <MoreHorizontal size={18} className={className} />;
   }
 };

@@ -1,8 +1,10 @@
 
+
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType, Workflow } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from '../constants';
-import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, DownloadCloud, FileCode, Save, Clock, AlertTriangle, Plus, Minus, Maximize, Move, Terminal, XCircle, CheckCircle, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, DownloadCloud, FileCode, Save, Clock, AlertTriangle, Plus, Minus, Maximize, Move, Terminal, XCircle, CheckCircle, ChevronDown, ChevronUp, ArrowLeft, Globe, Search } from 'lucide-react';
 import { Button } from './ui/Button';
 import { NodeCard } from './workflow/NodeCard';
 import { PropertiesPanel } from './workflow/PropertiesPanel';
@@ -49,6 +51,8 @@ const NodePaletteIcon = ({ type }: { type: NodeType }) => {
     case NodeType.EXECUTION: return <PlayCircle size={18} />;
     case NodeType.STORAGE: return <Save size={18} />;
     case NodeType.TIMER: return <Clock size={18} />;
+    case NodeType.DATABASE_QUERY: return <Search size={18} />;
+    case NodeType.HTTP_REQUEST: return <Globe size={18} />;
     default: return <MoreHorizontal size={18} />;
   }
 }
@@ -304,6 +308,10 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
                  outputMsg = `Persisted results to ${node.config.dbType || 'Database'}.`;
             } else if (node.type === NodeType.TIMER) {
                  outputMsg = `Trigger fired at ${new Date().toLocaleTimeString()}.`;
+            } else if (node.type === NodeType.DATABASE_QUERY) {
+                 outputMsg = `Executed SQL query. Fetched 124 rows.`;
+            } else if (node.type === NodeType.HTTP_REQUEST) {
+                 outputMsg = `Sent ${node.config.method || 'GET'} request to ${node.config.url || '...'}. Status: 200 OK`;
             } else {
                  outputMsg = `Execution complete.`;
             }
@@ -321,7 +329,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
     setIsRunning(false);
   };
 
-  const draggableNodeTypes = [NodeType.TIMER, NodeType.DATA_COLLECT, NodeType.SCRIPT, NodeType.STRATEGY, NodeType.STORAGE, NodeType.EXECUTION];
+  const draggableNodeTypes = [NodeType.TIMER, NodeType.DATA_COLLECT, NodeType.DATABASE_QUERY, NodeType.HTTP_REQUEST, NodeType.SCRIPT, NodeType.STRATEGY, NodeType.STORAGE, NodeType.EXECUTION];
   const getCursor = () => isPanning ? 'grabbing' : isSpacePressed ? 'grab' : isBoxSelecting ? 'crosshair' : 'default';
 
   return (
@@ -360,7 +368,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
                 if (!rect) return;
                 const x = (e.clientX - rect.left - pan.x) / zoom - 100;
                 const y = (e.clientY - rect.top - pan.y) / zoom - 40;
-                setNodes([...nodes, { id: Date.now().toString(), type, label: type === NodeType.TIMER ? 'Cron Timer' : `New ${type}`, x, y, config: {}, status: 'idle' }]);
+                setNodes([...nodes, { id: Date.now().toString(), type, label: type === NodeType.TIMER ? 'Cron Timer' : type === NodeType.DATABASE_QUERY ? 'DB Query' : type === NodeType.HTTP_REQUEST ? 'HTTP Request' : `New ${type}`, x, y, config: {}, status: 'idle' }]);
               }}
              >
                 <NodePaletteIcon type={type} />

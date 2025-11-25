@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { NodeType } from '../../types';
 
@@ -46,6 +48,22 @@ export const StrategyContent = ({ config }: { config: any }) => (
   </div>
 );
 
+export const DatabaseQueryContent = ({ config }: { config: any }) => (
+  <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px]">
+    <div className="text-sky-300 font-mono truncate mb-1">{config.connectionString ? 'Conn Configured' : 'No Connection'}</div>
+    <div className="text-slate-500 truncate italic">{config.query || 'SELECT * FROM ...'}</div>
+  </div>
+);
+
+export const HttpRequestContent = ({ config }: { config: any }) => (
+  <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
+    <div className="flex gap-2">
+      <span className="font-bold text-violet-400">{config.method || 'GET'}</span>
+      <span className="text-slate-400 truncate">{config.url || 'http://...'}</span>
+    </div>
+  </div>
+);
+
 export const DefaultNodeContent = ({ config }: { config: any }) => null;
 
 export const NODE_CONTENT_REGISTRY: Record<string, React.FC<{ config: any }>> = {
@@ -54,4 +72,6 @@ export const NODE_CONTENT_REGISTRY: Record<string, React.FC<{ config: any }>> = 
   [NodeType.STORAGE]: StorageContent,
   [NodeType.SCRIPT]: ScriptContent,
   [NodeType.STRATEGY]: StrategyContent,
+  [NodeType.DATABASE_QUERY]: DatabaseQueryContent,
+  [NodeType.HTTP_REQUEST]: HttpRequestContent,
 };

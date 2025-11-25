@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { NodeData, NodeType } from '../../types';
 import { NODE_ICONS_COLOR } from '../../constants';
-import { X, Clock, DownloadCloud, Code, Server, Wand2, Trash2 } from 'lucide-react';
+import { X, Clock, DownloadCloud, Code, Server, Wand2, Trash2, Search, Globe } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { generateStrategyCode } from '../../services/geminiService';
 
@@ -123,6 +125,90 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose,
               />
             </div>
             <Button variant="secondary" size="sm" className="w-full text-xs">Test Connection</Button>
+          </div>
+        )}
+
+        {/* DB QUERY CONFIG */}
+        {node.type === NodeType.DATABASE_QUERY && (
+          <div className="space-y-4 border-t border-slate-800 pt-4">
+            <div className="flex items-center gap-2 text-sky-400">
+              <Search size={16} />
+              <span className="text-sm font-semibold">Data Query Config</span>
+            </div>
+            <div>
+               <label className="block text-xs text-slate-400 mb-2">Connection String / DSN</label>
+               <input 
+                 type="text"
+                 placeholder="postgres://user:pass@localhost:5432/db"
+                 className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                 value={node.config.connectionString || ''}
+                 onChange={(e) => onUpdate('config.connectionString', e.target.value)}
+               />
+            </div>
+            <div>
+               <label className="block text-xs text-slate-400 mb-2">SQL Query</label>
+               <textarea 
+                 className="w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-xs font-mono text-sky-300 focus:ring-2 focus:ring-sky-500 outline-none h-48 resize-none"
+                 placeholder="SELECT * FROM market_data WHERE date > NOW() - INTERVAL '1 day';"
+                 value={node.config.query || ''}
+                 onChange={(e) => onUpdate('config.query', e.target.value)}
+               />
+            </div>
+            <Button variant="secondary" size="sm" className="w-full text-xs">Validate Query</Button>
+          </div>
+        )}
+
+        {/* HTTP REQUEST CONFIG */}
+        {node.type === NodeType.HTTP_REQUEST && (
+          <div className="space-y-4 border-t border-slate-800 pt-4">
+             <div className="flex items-center gap-2 text-violet-400">
+                <Globe size={16} />
+                <span className="text-sm font-semibold">HTTP Request Config</span>
+             </div>
+             <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-1">
+                   <label className="block text-xs text-slate-400 mb-2">Method</label>
+                   <select 
+                      className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-violet-500"
+                      value={node.config.method || 'GET'}
+                      onChange={(e) => onUpdate('config.method', e.target.value)}
+                   >
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                      <option value="PATCH">PATCH</option>
+                   </select>
+                </div>
+                <div className="col-span-2">
+                   <label className="block text-xs text-slate-400 mb-2">URL</label>
+                   <input 
+                     type="text"
+                     placeholder="https://api.example.com/v1/webhook"
+                     className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-violet-500"
+                     value={node.config.url || ''}
+                     onChange={(e) => onUpdate('config.url', e.target.value)}
+                   />
+                </div>
+             </div>
+             <div>
+                <label className="block text-xs text-slate-400 mb-2">Headers (JSON)</label>
+                <textarea 
+                   className="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs font-mono text-violet-200 focus:ring-2 focus:ring-violet-500 outline-none h-20 resize-none"
+                   placeholder='{"Content-Type": "application/json", "Authorization": "Bearer ..."}'
+                   value={node.config.headers || ''}
+                   onChange={(e) => onUpdate('config.headers', e.target.value)}
+                />
+             </div>
+             <div>
+                <label className="block text-xs text-slate-400 mb-2">Request Body</label>
+                <textarea 
+                   className="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-xs font-mono text-slate-300 focus:ring-2 focus:ring-violet-500 outline-none h-32 resize-none"
+                   placeholder='{ "data": "payload" }'
+                   value={node.config.body || ''}
+                   onChange={(e) => onUpdate('config.body', e.target.value)}
+                />
+             </div>
           </div>
         )}
 

@@ -8,7 +8,9 @@ export enum NodeType {
   FILTER = 'FILTER',
   EXECUTION = 'EXECUTION',
   STORAGE = 'STORAGE',            // New: DB Storage
-  TIMER = 'TIMER'                 // New: Cron Timer
+  TIMER = 'TIMER',                 // New: Cron Timer
+  DATABASE_QUERY = 'DATABASE_QUERY', // New: SQL Query
+  HTTP_REQUEST = 'HTTP_REQUEST'      // New: REST/Webhook
 }
 
 export interface NodeData {

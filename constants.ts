@@ -1,5 +1,6 @@
 
 
+
 import { NodeType, WidgetType, DataSourceType, Workflow, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
 // Standalone defaults (kept for fallback)
@@ -58,6 +59,8 @@ export const NODE_COLORS = {
   [NodeType.EXECUTION]: 'border-green-500 shadow-green-500/20',
   [NodeType.STORAGE]: 'border-indigo-500 shadow-indigo-500/20',
   [NodeType.TIMER]: 'border-teal-500 shadow-teal-500/20',
+  [NodeType.DATABASE_QUERY]: 'border-sky-500 shadow-sky-500/20',
+  [NodeType.HTTP_REQUEST]: 'border-violet-500 shadow-violet-500/20',
 };
 
 export const NODE_ICONS_COLOR = {
@@ -70,6 +73,8 @@ export const NODE_ICONS_COLOR = {
   [NodeType.EXECUTION]: 'text-green-400',
   [NodeType.STORAGE]: 'text-indigo-400',
   [NodeType.TIMER]: 'text-teal-400',
+  [NodeType.DATABASE_QUERY]: 'text-sky-400',
+  [NodeType.HTTP_REQUEST]: 'text-violet-400',
 };
 
 // --- Dashboard Initial Data ---
