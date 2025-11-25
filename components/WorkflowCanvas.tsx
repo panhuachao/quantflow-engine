@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType } from '../types';
-import { INITIAL_NODES, INITIAL_CONNECTIONS, NODE_COLORS, NODE_ICONS_COLOR } from '../constants';
-import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, X, Wand2, Code, Play, DownloadCloud, FileCode, Save, Server, Clock, AlertTriangle, Plus, Minus, Maximize, Move } from 'lucide-react';
+import { INITIAL_NODES, INITIAL_CONNECTIONS } from '../constants';
+import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, DownloadCloud, FileCode, Save, Clock, AlertTriangle, Plus, Minus, Maximize, Move } from 'lucide-react';
 import { Button } from './ui/Button';
-import { generateStrategyCode } from '../services/geminiService';
+import { NodeCard } from './workflow/NodeCard';
+import { PropertiesPanel } from './workflow/PropertiesPanel';
 
 // SVG Path helper
 const getBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
@@ -39,73 +39,21 @@ const hasCycle = (sourceId: string, targetId: string, connections: Connection[])
   return false;
 };
 
-const NodeIcon = ({ type, className }: { type: NodeType, className?: string }) => {
-  switch (type) {
-    case NodeType.SOURCE: return <Database size={18} className={className} />;
-    case NodeType.DATA_COLLECT: return <DownloadCloud size={18} className={className} />;
-    case NodeType.TRANSFORM: return <Filter size={18} className={className} />;
-    case NodeType.SCRIPT: return <FileCode size={18} className={className} />;
-    case NodeType.STRATEGY: return <TrendingUp size={18} className={className} />;
-    case NodeType.FILTER: return <Filter size={18} className={className} />;
-    case NodeType.EXECUTION: return <PlayCircle size={18} className={className} />;
-    case NodeType.STORAGE: return <Save size={18} className={className} />;
-    case NodeType.TIMER: return <Clock size={18} className={className} />;
-    default: return <MoreHorizontal size={18} className={className} />;
+const NodePaletteIcon = ({ type }: { type: NodeType }) => {
+   // Simplified icon mapping for palette
+   switch (type) {
+    case NodeType.SOURCE: return <Database size={18} />;
+    case NodeType.DATA_COLLECT: return <DownloadCloud size={18} />;
+    case NodeType.TRANSFORM: return <Filter size={18} />;
+    case NodeType.SCRIPT: return <FileCode size={18} />;
+    case NodeType.STRATEGY: return <TrendingUp size={18} />;
+    case NodeType.FILTER: return <Filter size={18} />;
+    case NodeType.EXECUTION: return <PlayCircle size={18} />;
+    case NodeType.STORAGE: return <Save size={18} />;
+    case NodeType.TIMER: return <Clock size={18} />;
+    default: return <MoreHorizontal size={18} />;
   }
-};
-
-const NodeSummary = ({ node }: { node: NodeData }) => {
-  const { config, type } = node;
-  switch (type) {
-    case NodeType.DATA_COLLECT:
-      return (
-        <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
-          <div className="flex justify-between items-center text-slate-400">
-            <span>Source</span>
-            <span className="text-slate-200 font-medium">{config.source || '-'}</span>
-          </div>
-          <div className="flex justify-between items-center text-slate-400">
-            <span>Symbol</span>
-            <span className="text-orange-400 font-mono">{config.symbol || '-'}</span>
-          </div>
-        </div>
-      );
-    case NodeType.TIMER:
-      return (
-        <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px]">
-          <div className="flex justify-between items-center text-slate-400">
-            <span>Schedule</span>
-            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-teal-400 font-mono">{config.cron || '* * * * *'}</code>
-          </div>
-        </div>
-      );
-    case NodeType.STORAGE:
-      return (
-        <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
-           <div className="text-slate-400">{config.dbType || 'Storage'}</div>
-           <div className="text-indigo-300 truncate" title={config.table}>{config.table ? `Table: ${config.table}` : 'No table set'}</div>
-        </div>
-      );
-    case NodeType.SCRIPT:
-      return (
-        <div className="mt-2 pt-2 border-t border-slate-700/50">
-           <div className="text-[10px] text-pink-400 font-mono bg-slate-900/50 p-1 rounded truncate opacity-80">
-             {config.code ? (config.code.length > 25 ? config.code.substring(0,25)+'...' : config.code) : '// No code'}
-           </div>
-        </div>
-      );
-    case NodeType.STRATEGY:
-      return (
-        <div className="mt-2 pt-2 border-t border-slate-700/50">
-           <div className="text-[10px] text-slate-400 italic truncate">
-             {config.description ? `"${config.description}"` : 'No description'}
-           </div>
-        </div>
-      );
-    default:
-      return null;
-  }
-};
+}
 
 export const WorkflowCanvas: React.FC = () => {
   const [nodes, setNodes] = useState<NodeData[]>(INITIAL_NODES);
@@ -125,14 +73,10 @@ export const WorkflowCanvas: React.FC = () => {
   // Connection Dragging State
   const [connectingSourceId, setConnectingSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // World coordinates
+  const [cycleError, setCycleError] = useState<string | null>(null);
   
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 }); // Screen coordinates for delta calc
-
-  // Property Panel State
-  const [nodePrompt, setNodePrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [cycleError, setCycleError] = useState<string | null>(null);
 
   // Derived Selection
   const singleSelectedNodeId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
@@ -148,9 +92,7 @@ export const WorkflowCanvas: React.FC = () => {
         }
         // Delete (Delete / Backspace)
         if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
-            // Prevent deleting if typing in an input
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-            
             setNodes(nodes.filter(n => !selectedIds.has(n.id)));
             setConnections(connections.filter(c => !selectedIds.has(c.sourceId) && !selectedIds.has(c.targetId)));
             setSelectedIds(new Set());
@@ -175,33 +117,23 @@ export const WorkflowCanvas: React.FC = () => {
   };
 
   const handleMouseDownNode = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent canvas click
+    e.stopPropagation(); 
     
     const newSelected = new Set(selectedIds);
     
-    // Multi-selection logic (Ctrl/Cmd click)
     if (e.ctrlKey || e.metaKey) {
         if (newSelected.has(id)) newSelected.delete(id);
         else newSelected.add(id);
         setSelectedIds(newSelected);
     } else {
-        // If clicking a node that is NOT in the current selection, select ONLY it
-        // If clicking a node that IS in the selection, keep selection (for drag group)
         if (!newSelected.has(id)) {
             setSelectedIds(new Set([id]));
         }
     }
 
-    // Prepare for drag
     setIsDraggingNode(true);
     setCycleError(null);
     lastMousePos.current = { x: e.clientX, y: e.clientY };
-    
-    // Sync prompt if single selection
-    if (selectedIds.size <= 1) {
-        const n = nodes.find(node => node.id === id);
-        if(n) setNodePrompt(n.config.description || '');
-    }
   };
 
   const handleMouseDownOutput = (e: React.MouseEvent, sourceId: string) => {
@@ -210,7 +142,6 @@ export const WorkflowCanvas: React.FC = () => {
     setCycleError(null);
     setConnectingSourceId(sourceId);
     
-    // Calculate initial world position for the connection line
     if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         setMousePos({
@@ -255,13 +186,10 @@ export const WorkflowCanvas: React.FC = () => {
 
     if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
-        
-        // World coordinates calculation
         const worldX = (e.clientX - rect.left - pan.x) / zoom;
         const worldY = (e.clientY - rect.top - pan.y) / zoom;
 
         if (isDraggingNode && selectedIds.size > 0) {
-            // Calculate delta in WORLD space (screen delta / zoom)
             const dx = (e.clientX - lastMousePos.current.x) / zoom;
             const dy = (e.clientY - lastMousePos.current.y) / zoom;
 
@@ -296,32 +224,20 @@ export const WorkflowCanvas: React.FC = () => {
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  const deleteConnection = (id: string) => {
-      setConnections(connections.filter(c => c.id !== id));
-  };
-
-  const handleGenerateCode = async () => {
-    if (!singleSelectedNodeId || !nodePrompt) return;
-    const node = nodes.find(n => n.id === singleSelectedNodeId);
-    if (!node || node.type !== NodeType.STRATEGY) return;
-
-    setIsGenerating(true);
-    const code = await generateStrategyCode(nodePrompt);
-    
-    setNodes(prev => prev.map(n => 
-      n.id === singleSelectedNodeId ? { 
-        ...n, 
-        config: { ...n.config, parameters: code, description: nodePrompt } 
-      } : n
-    ));
-    setIsGenerating(false);
-  };
-
-  const updateNodeConfig = (key: string, value: any) => {
+  const updateSelectedNode = (key: string, value: any) => {
     if (!singleSelectedNodeId) return;
-    setNodes(prev => prev.map(n => 
-      n.id === singleSelectedNodeId ? { ...n, config: { ...n.config, [key]: value } } : n
-    ));
+    
+    setNodes(prev => prev.map(n => {
+      if (n.id === singleSelectedNodeId) {
+        // Handle dot notation "config.cron"
+        if (key.startsWith('config.')) {
+           const configKey = key.split('.')[1];
+           return { ...n, config: { ...n.config, [configKey]: value } };
+        }
+        return { ...n, [key]: value };
+      }
+      return n;
+    }));
   };
 
   const draggableNodeTypes = [
@@ -335,7 +251,7 @@ export const WorkflowCanvas: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      {/* Toolbar / Palette */}
+      {/* Palette */}
       <div className="w-16 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-4 gap-4 z-20 shadow-xl">
          {draggableNodeTypes.map(type => (
              <div key={type} 
@@ -345,7 +261,6 @@ export const WorkflowCanvas: React.FC = () => {
               onDragEnd={(e) => {
                 const rect = canvasRef.current?.getBoundingClientRect();
                 if (!rect) return;
-                // Calculate drop position in world coordinates
                 const x = (e.clientX - rect.left - pan.x) / zoom - 100;
                 const y = (e.clientY - rect.top - pan.y) / zoom - 40;
                 
@@ -361,7 +276,7 @@ export const WorkflowCanvas: React.FC = () => {
                 setNodes([...nodes, newNode]);
               }}
              >
-                <NodeIcon type={type} />
+                <NodePaletteIcon type={type} />
              </div>
          ))}
       </div>
@@ -373,7 +288,6 @@ export const WorkflowCanvas: React.FC = () => {
         onMouseDown={handleMouseDownCanvas}
         style={{ cursor: isPanning ? 'grabbing' : undefined }}
       >
-        {/* Cycle Error Toast */}
         {cycleError && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-500 text-white px-4 py-2 rounded-lg shadow-xl flex items-center gap-2 animate-bounce">
                 <AlertTriangle size={18} />
@@ -398,7 +312,7 @@ export const WorkflowCanvas: React.FC = () => {
                 const target = nodes.find(n => n.id === conn.targetId);
                 if (!source || !target) return null;
                 return (
-                <g key={conn.id} className="group pointer-events-auto cursor-pointer" onClick={() => deleteConnection(conn.id)}>
+                <g key={conn.id} className="group pointer-events-auto cursor-pointer" onClick={() => setConnections(prev => prev.filter(c => c.id !== conn.id))}>
                     <path
                         d={getBezierPath(source.x + 200, source.y + 40, target.x, target.y + 40)}
                         stroke="#475569"
@@ -437,52 +351,19 @@ export const WorkflowCanvas: React.FC = () => {
             </svg>
 
             {nodes.map(node => (
-            <div
-                key={node.id}
-                style={{ transform: `translate(${node.x}px, ${node.y}px)` }}
-                className={`absolute w-[200px] bg-slate-800 rounded-lg border-l-4 ${NODE_COLORS[node.type]} 
-                  ${selectedIds.has(node.id) ? 'ring-2 ring-white ring-opacity-80 shadow-[0_0_15px_rgba(255,255,255,0.2)]' : ''} 
-                  shadow-xl group transition-shadow will-change-transform`}
-                onMouseDown={(e) => handleMouseDownNode(e, node.id)}
-            >
-                {/* Header */}
-                <div className="p-3 border-b border-slate-700/50 flex items-center justify-between cursor-move select-none">
-                <div className="flex items-center gap-2 max-w-[150px]">
-                    <NodeIcon type={node.type} className={NODE_ICONS_COLOR[node.type]} />
-                    <span className="text-sm font-semibold text-slate-200 truncate">{node.label}</span>
-                </div>
-                {node.status === 'running' && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
-                </div>
-                
-                {/* Body */}
-                <div className="p-3 bg-slate-900/50 rounded-b-lg min-h-[50px]">
-                <div className="text-[10px] text-slate-600 font-mono mb-1">ID: {node.id.substring(0,4)}</div>
-                
-                <NodeSummary node={node} />
-
-                {/* Connectors */}
-                <div 
-                    className="absolute top-1/2 -left-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
-                    onMouseUp={(e) => handleMouseUpInput(e, node.id)}
-                >
-                    <div className={`w-3 h-3 rounded-full border-2 transition-all duration-200 
-                        ${connectingSourceId && connectingSourceId !== node.id ? 'bg-cyan-400 border-cyan-200 scale-125 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-slate-600 border-slate-900'} 
-                        hover:bg-white cursor-crosshair`} 
-                    />
-                </div>
-                
-                <div 
-                    className="absolute top-1/2 -right-3 w-6 h-6 -mt-3 flex items-center justify-center z-20"
-                    onMouseDown={(e) => handleMouseDownOutput(e, node.id)}
-                >
-                    <div className="w-3 h-3 bg-slate-600 rounded-full border-2 border-slate-900 hover:bg-cyan-400 hover:border-white cursor-crosshair transition-colors" />
-                </div>
-                </div>
-            </div>
+               <NodeCard 
+                 key={node.id} 
+                 node={node} 
+                 isSelected={selectedIds.has(node.id)}
+                 connectingSourceId={connectingSourceId}
+                 onMouseDown={handleMouseDownNode}
+                 onMouseDownOutput={handleMouseDownOutput}
+                 onMouseUpInput={handleMouseUpInput}
+               />
             ))}
         </div>
 
-        {/* Zoom Controls (Bottom Left) */}
+        {/* Zoom Controls */}
         <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
             <button 
                 onClick={() => setZoom(z => Math.max(0.2, z - 0.1))}
@@ -518,247 +399,18 @@ export const WorkflowCanvas: React.FC = () => {
         </div>
       </div>
 
-      {/* Properties Panel (Right Sidebar) */}
+      {/* Properties Panel */}
       {selectedNode ? (
-        <div className="w-96 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto z-20 shadow-2xl">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Properties</h2>
-            <button onClick={() => setSelectedIds(new Set())} className="text-slate-400 hover:text-white">
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-2">Node Label</label>
-              <input 
-                type="text" 
-                value={selectedNode.label}
-                onChange={(e) => setNodes(nodes.map(n => n.id === selectedNode.id ? {...n, label: e.target.value} : n))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
-              />
-            </div>
-
-            <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
-               <div className="flex items-center justify-between mb-2">
-                 <span className="text-xs text-slate-400">Node Type</span>
-                 <span className={`text-xs font-bold px-2 py-1 rounded bg-slate-700 ${NODE_ICONS_COLOR[selectedNode.type]}`}>{selectedNode.type}</span>
-               </div>
-            </div>
-
-            {/* TIMER CONFIG */}
-            {selectedNode.type === NodeType.TIMER && (
-              <div className="space-y-4 border-t border-slate-800 pt-4">
-                 <div className="flex items-center gap-2 text-teal-400">
-                    <Clock size={16} />
-                    <span className="text-sm font-semibold">Scheduler Config</span>
-                 </div>
-                 <div>
-                    <label className="block text-xs text-slate-400 mb-2">Cron Expression</label>
-                    <input 
-                      type="text"
-                      placeholder="0 9 * * 1-5"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-teal-500 font-mono"
-                      value={selectedNode.config.cron || ''}
-                      onChange={(e) => updateNodeConfig('cron', e.target.value)}
-                    />
-                    <div className="mt-2 text-[10px] text-slate-500">
-                       Example: <code className="bg-slate-800 px-1 rounded">0 9 * * 1-5</code> (Mon-Fri 9:00 AM)
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="active"
-                      checked={selectedNode.config.active !== false}
-                      onChange={(e) => updateNodeConfig('active', e.target.checked)}
-                      className="rounded bg-slate-800 border-slate-700 text-teal-600 focus:ring-teal-500"
-                    />
-                    <label htmlFor="active" className="text-sm text-slate-300">Enable Trigger</label>
-                 </div>
-              </div>
-            )}
-
-            {/* DATA COLLECTION CONFIG */}
-            {selectedNode.type === NodeType.DATA_COLLECT && (
-              <div className="space-y-4 border-t border-slate-800 pt-4">
-                <div className="flex items-center gap-2 text-orange-400">
-                   <DownloadCloud size={16} />
-                   <span className="text-sm font-semibold">Data Source Config</span>
-                </div>
-                <div>
-                   <label className="block text-xs text-slate-400 mb-2">Provider</label>
-                   <select 
-                     className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-orange-500"
-                     value={selectedNode.config.source || 'AkShare'}
-                     onChange={(e) => updateNodeConfig('source', e.target.value)}
-                   >
-                     <option value="AkShare">AkShare (Open Source)</option>
-                     <option value="Tushare">Tushare Pro</option>
-                     <option value="Binance">Binance Public API</option>
-                     <option value="Yahoo">Yahoo Finance</option>
-                   </select>
-                </div>
-                {selectedNode.config.source === 'Tushare' && (
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-2">Tushare Token</label>
-                    <input 
-                      type="password"
-                      placeholder="Enter API Token"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none"
-                      value={selectedNode.config.token || ''}
-                      onChange={(e) => updateNodeConfig('token', e.target.value)}
-                    />
-                  </div>
-                )}
-                <div>
-                   <label className="block text-xs text-slate-400 mb-2">Symbol / Code</label>
-                   <input 
-                     type="text"
-                     placeholder="e.g., 600519.SH or BTCUSDT"
-                     className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-orange-500"
-                     value={selectedNode.config.symbol || ''}
-                     onChange={(e) => updateNodeConfig('symbol', e.target.value)}
-                   />
-                </div>
-                <Button variant="secondary" size="sm" className="w-full text-xs">Test Connection</Button>
-              </div>
-            )}
-
-            {/* SCRIPT CONFIG */}
-            {selectedNode.type === NodeType.SCRIPT && (
-              <div className="space-y-4 border-t border-slate-800 pt-4">
-                <div className="flex items-center gap-2 text-pink-400">
-                   <Code size={16} />
-                   <span className="text-sm font-semibold">JavaScript Processor</span>
-                </div>
-                <div>
-                   <label className="block text-xs text-slate-400 mb-2">Processing Logic</label>
-                   <div className="relative">
-                     <textarea 
-                       className="w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-xs font-mono text-pink-300 focus:ring-2 focus:ring-pink-500 outline-none h-48 resize-none"
-                       placeholder="// Access input data via `data` variable&#10;return data.filter(item => item.close > 0);"
-                       value={selectedNode.config.code || ''}
-                       onChange={(e) => updateNodeConfig('code', e.target.value)}
-                     />
-                   </div>
-                </div>
-                <div className="text-xs text-slate-500">
-                  Input variable: <span className="font-mono text-slate-400">data</span> (Array)<br/>
-                  Expected return: Array or Object
-                </div>
-              </div>
-            )}
-
-            {/* STORAGE CONFIG */}
-            {selectedNode.type === NodeType.STORAGE && (
-              <div className="space-y-4 border-t border-slate-800 pt-4">
-                <div className="flex items-center gap-2 text-indigo-400">
-                   <Server size={16} />
-                   <span className="text-sm font-semibold">Storage Configuration</span>
-                </div>
-                <div>
-                   <label className="block text-xs text-slate-400 mb-2">Database Type</label>
-                   <select 
-                     className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                     value={selectedNode.config.dbType || 'SQLite'}
-                     onChange={(e) => updateNodeConfig('dbType', e.target.value)}
-                   >
-                     <option value="SQLite">SQLite (Local File)</option>
-                     <option value="MySQL">MySQL / MariaDB</option>
-                     <option value="PostgreSQL">PostgreSQL</option>
-                   </select>
-                </div>
-                
-                {selectedNode.config.dbType !== 'SQLite' ? (
-                   <div>
-                     <label className="block text-xs text-slate-400 mb-2">Connection String</label>
-                     <input 
-                       type="text"
-                       placeholder="postgres://user:pass@localhost:5432/db"
-                       className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                       value={selectedNode.config.connectionString || ''}
-                       onChange={(e) => updateNodeConfig('connectionString', e.target.value)}
-                     />
-                   </div>
-                ) : (
-                   <div>
-                     <label className="block text-xs text-slate-400 mb-2">File Path</label>
-                     <input 
-                       type="text"
-                       placeholder="./data/strategies.db"
-                       className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                       value={selectedNode.config.filePath || ''}
-                       onChange={(e) => updateNodeConfig('filePath', e.target.value)}
-                     />
-                   </div>
-                )}
-
-                <div>
-                   <label className="block text-xs text-slate-400 mb-2">Target Table Name</label>
-                   <input 
-                     type="text"
-                     placeholder="strategy_results_v1"
-                     className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                     value={selectedNode.config.table || ''}
-                     onChange={(e) => updateNodeConfig('table', e.target.value)}
-                   />
-                </div>
-              </div>
-            )}
-
-            {/* STRATEGY AI CONFIG */}
-            {selectedNode.type === NodeType.STRATEGY && (
-              <div className="space-y-4 border-t border-slate-800 pt-4">
-                <div className="flex items-center gap-2 text-purple-400">
-                  <Wand2 size={16} />
-                  <span className="text-sm font-semibold">AI Strategy Generator</span>
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-slate-400 mb-2">Describe your strategy logic</label>
-                  <textarea 
-                    className="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-sm text-slate-200 focus:ring-2 focus:ring-purple-500 outline-none h-32 resize-none"
-                    placeholder="e.g., Buy when RSI < 30 and MACD crosses above signal line..."
-                    value={nodePrompt}
-                    onChange={(e) => setNodePrompt(e.target.value)}
-                  />
-                </div>
-
-                <Button 
-                  variant="primary" 
-                  className="w-full bg-purple-600 hover:bg-purple-500 shadow-purple-500/25"
-                  onClick={handleGenerateCode}
-                  isLoading={isGenerating}
-                >
-                  Generate Code with Gemini
-                </Button>
-
-                {selectedNode.config.parameters && (
-                   <div className="mt-4 animate-in fade-in slide-in-from-bottom-2">
-                     <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs text-slate-400">Generated Python Logic</label>
-                        <Code size={14} className="text-slate-500" />
-                     </div>
-                     <pre className="w-full bg-slate-950 border border-slate-800 rounded-md p-3 text-xs font-mono text-green-400 overflow-x-auto">
-                       {selectedNode.config.parameters}
-                     </pre>
-                   </div>
-                )}
-              </div>
-            )}
-             
-             <div className="border-t border-slate-800 pt-6">
-               <Button variant="danger" size="sm" className="w-full" onClick={() => {
-                 setNodes(nodes.filter(n => n.id !== selectedNode.id));
-                 setConnections(connections.filter(c => c.sourceId !== selectedNode.id && c.targetId !== selectedNode.id));
-                 setSelectedIds(new Set());
-               }}>
-                 Delete Node
-               </Button>
-             </div>
-          </div>
-        </div>
+        <PropertiesPanel 
+           node={selectedNode}
+           onUpdate={updateSelectedNode}
+           onClose={() => setSelectedIds(new Set())}
+           onDelete={() => {
+              setNodes(prev => prev.filter(n => n.id !== selectedNode.id));
+              setConnections(prev => prev.filter(c => c.sourceId !== selectedNode.id && c.targetId !== selectedNode.id));
+              setSelectedIds(new Set());
+           }}
+        />
       ) : (
         selectedIds.size > 1 && (
             <div className="w-96 bg-slate-900 border-l border-slate-800 p-6 z-20 shadow-2xl flex flex-col items-center justify-center text-center">
@@ -778,7 +430,7 @@ export const WorkflowCanvas: React.FC = () => {
       <div className="absolute bottom-6 right-6 z-10">
          <Button size="lg" className="rounded-full shadow-2xl bg-green-600 hover:bg-green-500 text-white pl-6 pr-8 py-4 border-4 border-slate-900">
             <div className="flex items-center gap-3">
-               <Play fill="currentColor" className="w-5 h-5" />
+               <PlayCircle fill="currentColor" className="w-5 h-5" />
                <div className="text-left">
                  <div className="text-xs font-medium opacity-80 uppercase tracking-wider">System Status</div>
                  <div className="font-bold">Deploy Strategy</div>
