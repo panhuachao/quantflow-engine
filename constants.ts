@@ -1,4 +1,5 @@
-import { NodeType } from './types';
+
+import { NodeType, WidgetType, DataSourceType } from './types';
 
 export const INITIAL_NODES = [
   {
@@ -66,3 +67,87 @@ export const NODE_ICONS_COLOR = {
   [NodeType.EXECUTION]: 'text-green-400',
   [NodeType.STORAGE]: 'text-indigo-400',
 };
+
+// --- Dashboard Initial Data ---
+
+export const INITIAL_DATA_SOURCES = [
+  { 
+    id: 'ds1', 
+    name: 'Main Strategy DB', 
+    type: DataSourceType.SQLITE, 
+    config: { filePath: './strategies.db' } 
+  },
+  { 
+    id: 'ds2', 
+    name: 'Market Data Warehouse', 
+    type: DataSourceType.POSTGRES, 
+    config: { connectionString: 'postgres://admin:pass@localhost:5432/market' } 
+  }
+];
+
+export const INITIAL_DASHBOARD_WIDGETS = [
+  {
+    id: 'w1',
+    title: 'Total PnL',
+    type: WidgetType.STAT,
+    colSpan: 1,
+    script: 'SELECT sum(pnl) FROM trades WHERE date = CURRENT_DATE',
+    config: { value: '$12,450', subValue: '+4.2%', color: 'text-emerald-400' }
+  },
+  {
+    id: 'w2',
+    title: 'Active Positions',
+    type: WidgetType.STAT,
+    colSpan: 1,
+    script: 'SELECT count(*) FROM positions WHERE status = "OPEN"',
+    config: { value: '8', subValue: 'Long: 5 | Short: 3', color: 'text-blue-400' }
+  },
+  {
+    id: 'w3',
+    title: 'Win Rate (24h)',
+    type: WidgetType.STAT,
+    colSpan: 1,
+    script: '',
+    config: { value: '68%', subValue: '21 Trades', color: 'text-purple-400' }
+  },
+  {
+    id: 'w4',
+    title: 'Alpha',
+    type: WidgetType.STAT,
+    colSpan: 1,
+    script: '',
+    config: { value: '1.45', subValue: 'vs Benchmark', color: 'text-yellow-400' }
+  },
+  {
+    id: 'w5',
+    title: 'Equity Curve',
+    type: WidgetType.LINE,
+    dataSourceId: 'ds1',
+    colSpan: 3,
+    script: 'SELECT time, equity FROM performance_log ORDER BY time LIMIT 100'
+  },
+  {
+    id: 'w6',
+    title: 'Asset Allocation',
+    type: WidgetType.PIE,
+    dataSourceId: 'ds1',
+    colSpan: 1,
+    script: 'SELECT asset, value FROM portfolio_snapshot'
+  },
+  {
+    id: 'w7',
+    title: 'BTC/USDT Strategy',
+    type: WidgetType.CANDLE,
+    dataSourceId: 'ds2',
+    colSpan: 2,
+    script: 'SELECT open, high, low, close FROM klines WHERE symbol="BTCUSDT"'
+  },
+  {
+    id: 'w8',
+    title: 'Monthly Returns',
+    type: WidgetType.BAR,
+    dataSourceId: 'ds1',
+    colSpan: 2,
+    script: 'SELECT month, return_pct FROM monthly_stats'
+  }
+];
