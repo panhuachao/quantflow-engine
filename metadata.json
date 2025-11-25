@@ -1,0 +1,5 @@
+{
+  "name": "QuantFlow AI",
+  "description": "A high-performance visual quantitative trading framework allowing users to build, backtest, and execute strategies using a node-based workflow and Gemini AI assistance.",
+  "requestFramePermissions": []
+}
