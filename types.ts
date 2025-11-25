@@ -42,37 +42,3 @@ export interface StrategyConfig {
   interval: string;
   parameters: string; // Python/Pseudo code
 }
-
-// --- Dashboard Types ---
-
-export enum WidgetType {
-  METRIC = 'METRIC',
-  LINE_CHART = 'LINE_CHART',
-  BAR_CHART = 'BAR_CHART',
-  PIE_CHART = 'PIE_CHART',
-  K_LINE = 'K_LINE'
-}
-
-export enum DataSourceType {
-  SQLITE = 'SQLITE',
-  MYSQL = 'MYSQL',
-  POSTGRES = 'POSTGRES',
-  API = 'API'
-}
-
-export interface DataSource {
-  id: string;
-  name: string;
-  type: DataSourceType;
-  connectionString: string;
-}
-
-export interface DashboardWidget {
-  id: string;
-  title: string;
-  type: WidgetType;
-  dataSourceId: string;
-  query: string; // SQL or JS Script
-  w: number; // Grid width (col span)
-  h: number; // Grid height (row span)
-}

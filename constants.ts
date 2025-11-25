@@ -1,4 +1,4 @@
-import { NodeType, WidgetType, DataSourceType, DataSource, DashboardWidget } from './types';
+import { NodeType } from './types';
 
 export const INITIAL_NODES = [
   {
@@ -66,17 +66,3 @@ export const NODE_ICONS_COLOR = {
   [NodeType.EXECUTION]: 'text-green-400',
   [NodeType.STORAGE]: 'text-indigo-400',
 };
-
-// --- Dashboard Defaults ---
-
-export const INITIAL_DATA_SOURCES: DataSource[] = [
-  { id: 'ds1', name: 'Main Strategy DB', type: DataSourceType.SQLITE, connectionString: './data/strategies.db' },
-  { id: 'ds2', name: 'Market Data Archive', type: DataSourceType.POSTGRES, connectionString: 'postgres://user:pass@localhost:5432/market' },
-];
-
-export const INITIAL_WIDGETS: DashboardWidget[] = [
-  { id: 'w1', title: 'Total Portfolio Value', type: WidgetType.METRIC, dataSourceId: 'ds1', query: 'SELECT sum(value) FROM portfolio', w: 1, h: 1 },
-  { id: 'w2', title: 'Daily PnL Trend', type: WidgetType.LINE_CHART, dataSourceId: 'ds1', query: 'SELECT date, pnl FROM daily_stats', w: 2, h: 2 },
-  { id: 'w3', title: 'Asset Allocation', type: WidgetType.PIE_CHART, dataSourceId: 'ds1', query: 'SELECT asset, weight FROM allocation', w: 1, h: 2 },
-  { id: 'w4', title: 'BTC/USDT OHLC', type: WidgetType.K_LINE, dataSourceId: 'ds2', query: 'SELECT * FROM candles WHERE symbol="BTCUSDT"', w: 3, h: 2 },
-];
