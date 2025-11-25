@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StrategyItem } from '../types';
 import { Button } from './ui/Button';
-import { Plus, Search, MoreHorizontal, Code2, Tag, Calendar, FileCode } from 'lucide-react';
-import { MOCK_STRATEGIES } from '../constants';
+import { Plus, Search, MoreHorizontal, Code2, Tag, Calendar, FileCode, Loader2 } from 'lucide-react';
+import { strategyService } from '../services/strategyService';
 
 interface StrategyListProps {
   onSelect: (strategy: StrategyItem) => void;
@@ -11,11 +10,23 @@ interface StrategyListProps {
 }
 
 export const StrategyList: React.FC<StrategyListProps> = ({ onSelect, onCreate }) => {
+  const [strategies, setStrategies] = useState<StrategyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+        const data = await strategyService.getAll();
+        setStrategies(data);
+        setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-purple-500"/></div>;
+
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-950">
       <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">Investment Strategies</h2>
@@ -36,9 +47,8 @@ export const StrategyList: React.FC<StrategyListProps> = ({ onSelect, onCreate }
           </div>
         </div>
 
-        {/* List */}
         <div className="grid grid-cols-1 gap-4">
-          {MOCK_STRATEGIES.map((strategy) => (
+          {strategies.map((strategy) => (
             <div 
               key={strategy.id} 
               className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-purple-500/50 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-purple-900/10 transition-all cursor-pointer flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"

@@ -1,21 +1,31 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BacktestReport } from '../types';
 import { Button } from './ui/Button';
-import { Search, FileText, CheckCircle, XCircle, Clock, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
-import { MOCK_BACKTEST_REPORTS } from '../constants';
+import { Search, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { backtestService } from '../services/backtestService';
 
 interface BacktestListProps {
   onSelect: (report: BacktestReport) => void;
-  reports?: BacktestReport[];
 }
 
-export const BacktestList: React.FC<BacktestListProps> = ({ onSelect, reports = MOCK_BACKTEST_REPORTS }) => {
+export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
+  const [reports, setReports] = useState<BacktestReport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await backtestService.getAll();
+      setReports(data);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-green-500"/></div>;
+
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-950">
       <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">Backtest Evaluation</h2>
@@ -31,7 +41,6 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect, reports = 
             </div>
         </div>
 
-        {/* Table/List */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/20">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -99,7 +108,6 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect, reports = 
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

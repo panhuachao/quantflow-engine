@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardMeta } from '../types';
 import { Button } from './ui/Button';
-import { Plus, LayoutGrid, BarChart3, Clock, MoreVertical, ExternalLink } from 'lucide-react';
-import { MOCK_DASHBOARDS_LIST } from '../constants';
+import { Plus, LayoutGrid, BarChart3, Clock, MoreVertical, ExternalLink, Loader2 } from 'lucide-react';
+import { dashboardService } from '../services/dashboardService';
 
 interface DashboardListProps {
   onSelect: (dashboard: DashboardMeta) => void;
@@ -11,6 +10,20 @@ interface DashboardListProps {
 }
 
 export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate }) => {
+  const [dashboards, setDashboards] = useState<DashboardMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+        const data = await dashboardService.getAll();
+        setDashboards(data);
+        setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-cyan-500"/></div>;
+
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-950">
        <div className="max-w-7xl mx-auto space-y-8">
@@ -26,7 +39,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_DASHBOARDS_LIST.map((dash) => (
+            {dashboards.map((dash) => (
                <div 
                  key={dash.id}
                  className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col"

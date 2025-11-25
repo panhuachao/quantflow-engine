@@ -1,10 +1,8 @@
-
-
-import React from 'react';
-import { WorkflowMeta, Workflow } from '../types';
+import React, { useEffect, useState } from 'react';
+import { WorkflowMeta } from '../types';
 import { Button } from './ui/Button';
-import { Plus, Search, MoreHorizontal, Play, Edit, Clock, GitBranch, Activity } from 'lucide-react';
-import { MOCK_WORKFLOWS_LIST } from '../constants';
+import { Plus, Search, MoreHorizontal, Edit, Clock, GitBranch, Activity, Loader2 } from 'lucide-react';
+import { workflowService } from '../services/workflowService';
 
 interface WorkflowListProps {
   onSelect: (workflow: WorkflowMeta) => void;
@@ -12,11 +10,33 @@ interface WorkflowListProps {
 }
 
 export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }) => {
+  const [workflows, setWorkflows] = useState<WorkflowMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWorkflows = async () => {
+      try {
+        const data = await workflowService.getAll();
+        setWorkflows(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWorkflows();
+  }, []);
+
+  if (loading) {
+      return (
+          <div className="h-full flex items-center justify-center bg-slate-950">
+              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+          </div>
+      );
+  }
+
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-950">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">Strategies & Workflows</h2>
@@ -37,13 +57,12 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
           </div>
         </div>
 
-        {/* Grid/List */}
         <div className="grid grid-cols-1 gap-4">
-          {MOCK_WORKFLOWS_LIST.map((workflow) => (
+          {workflows.map((workflow) => (
             <div 
               key={workflow.id} 
               className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
-              onClick={() => onSelect({ ...workflow, nodesCount: workflow.nodes.length })}
+              onClick={() => onSelect(workflow)}
             >
               <div className="flex items-start gap-4 flex-1">
                 <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
@@ -73,7 +92,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                     </div>
                     <div className="flex items-center gap-1.5">
                        <Activity size={12} />
-                       {workflow.nodes.length} Nodes
+                       {workflow.nodesCount} Nodes
                     </div>
                   </div>
                 </div>
@@ -84,7 +103,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                    variant="secondary" 
                    size="sm" 
                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                   onClick={(e) => { e.stopPropagation(); onSelect({ ...workflow, nodesCount: workflow.nodes.length }); }}
+                   onClick={(e) => { e.stopPropagation(); onSelect(workflow); }}
                  >
                    <Edit size={14} className="mr-2" />
                    Configure
