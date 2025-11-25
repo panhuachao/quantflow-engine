@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { WorkflowMeta } from '../types';
+import { WorkflowMeta, Workflow } from '../types';
 import { Button } from './ui/Button';
 import { Plus, Search, MoreHorizontal, Play, Edit, Clock, GitBranch, Activity } from 'lucide-react';
 import { MOCK_WORKFLOWS_LIST } from '../constants';
@@ -42,7 +43,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
             <div 
               key={workflow.id} 
               className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
-              onClick={() => onSelect(workflow)}
+              onClick={() => onSelect({ ...workflow, nodesCount: workflow.nodes.length })}
             >
               <div className="flex items-start gap-4 flex-1">
                 <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
@@ -72,7 +73,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                     </div>
                     <div className="flex items-center gap-1.5">
                        <Activity size={12} />
-                       {workflow.nodesCount} Nodes
+                       {workflow.nodes.length} Nodes
                     </div>
                   </div>
                 </div>
@@ -83,7 +84,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                    variant="secondary" 
                    size="sm" 
                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                   onClick={(e) => { e.stopPropagation(); onSelect(workflow); }}
+                   onClick={(e) => { e.stopPropagation(); onSelect({ ...workflow, nodesCount: workflow.nodes.length }); }}
                  >
                    <Edit size={14} className="mr-2" />
                    Configure

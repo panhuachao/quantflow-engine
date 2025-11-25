@@ -1,4 +1,5 @@
 
+
 import { NodeType, WidgetType, DataSourceType, Workflow, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
 // Standalone defaults (kept for fallback)
@@ -371,3 +372,43 @@ export const MOCK_REPORT_HTML = `
   </div>
 </body>
 </html>
+
+export const MOCK_BACKTEST_REPORTS: BacktestReport[] = [
+  {
+    id: 'bt-1',
+    strategyId: 'st-1',
+    strategyName: 'Golden Cross Strategy',
+    symbol: 'BTCUSDT',
+    interval: '1h',
+    startDate: '2023-10-01',
+    endDate: '2023-10-31',
+    initialCash: 100000,
+    finalValue: 108500,
+    returnPct: 8.5,
+    sharpeRatio: 1.45,
+    maxDrawdown: -5.2,
+    tradeCount: 42,
+    winRate: 58.0,
+    status: 'completed',
+    createdAt: '2023-11-01 09:00',
+    reportHtml: MOCK_REPORT_HTML
+  },
+  {
+     id: 'bt-2',
+     strategyId: 'st-2',
+     strategyName: 'RSI Mean Reversion',
+     symbol: 'ETHUSDT',
+     interval: '15m',
+     startDate: '2023-10-20',
+     endDate: '2023-10-25',
+     initialCash: 50000,
+     finalValue: 49200,
+     returnPct: -1.6,
+     sharpeRatio: -0.8,
+     maxDrawdown: -4.5,
+     tradeCount: 156,
+     winRate: 42.0,
+     status: 'completed',
+     createdAt: '2023-10-26 14:20'
+  }
+];
