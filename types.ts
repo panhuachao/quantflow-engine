@@ -7,7 +7,8 @@ export enum NodeType {
   STRATEGY = 'STRATEGY',
   FILTER = 'FILTER',
   EXECUTION = 'EXECUTION',
-  STORAGE = 'STORAGE'            // New: DB Storage
+  STORAGE = 'STORAGE',            // New: DB Storage
+  TIMER = 'TIMER'                 // New: Cron Timer
 }
 
 export interface NodeData {
@@ -36,12 +37,26 @@ export enum AppView {
   DASHBOARD = 'DASHBOARD',
   WORKFLOW = 'WORKFLOW',
   MARKET = 'MARKET',
+  STRATEGIES = 'STRATEGIES', // New View
 }
 
 export interface StrategyConfig {
   symbol: string;
   interval: string;
   parameters: string; // Python/Pseudo code
+}
+
+// --- Strategy Module Types ---
+
+export interface StrategyItem {
+  id: string;
+  name: string;
+  description: string;
+  code: string; // Python code
+  language: 'python';
+  framework: 'backtrader';
+  updatedAt: string;
+  tags: string[];
 }
 
 // --- Dashboard Extensions ---

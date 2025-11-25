@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS, NODE_COLORS, NODE_ICONS_COLOR } from '../constants';
-import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, X, Wand2, Code, Play, DownloadCloud, FileCode, Save, Server } from 'lucide-react';
+import { Database, Filter, TrendingUp, PlayCircle, MoreHorizontal, X, Wand2, Code, Play, DownloadCloud, FileCode, Save, Server, Clock } from 'lucide-react';
 import { Button } from './ui/Button';
 import { generateStrategyCode } from '../services/geminiService';
 
@@ -20,6 +21,7 @@ const NodeIcon = ({ type, className }: { type: NodeType, className?: string }) =
     case NodeType.FILTER: return <Filter size={18} className={className} />;
     case NodeType.EXECUTION: return <PlayCircle size={18} className={className} />;
     case NodeType.STORAGE: return <Save size={18} className={className} />;
+    case NodeType.TIMER: return <Clock size={18} className={className} />;
     default: return <MoreHorizontal size={18} className={className} />;
   }
 };
@@ -109,6 +111,7 @@ export const WorkflowCanvas: React.FC = () => {
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
   
   const draggableNodeTypes = [
+    NodeType.TIMER,
     NodeType.DATA_COLLECT,
     NodeType.SCRIPT,
     NodeType.STRATEGY,
@@ -129,7 +132,7 @@ export const WorkflowCanvas: React.FC = () => {
                 const newNode: NodeData = {
                   id: Date.now().toString(),
                   type,
-                  label: `New ${type}`,
+                  label: type === NodeType.TIMER ? 'Cron Timer' : `New ${type}`,
                   x: e.clientX - 300, 
                   y: e.clientY - 100,
                   config: {},
@@ -226,6 +229,39 @@ export const WorkflowCanvas: React.FC = () => {
                  <span className={`text-xs font-bold px-2 py-1 rounded bg-slate-700 ${NODE_ICONS_COLOR[selectedNode.type]}`}>{selectedNode.type}</span>
                </div>
             </div>
+
+            {/* TIMER CONFIG */}
+            {selectedNode.type === NodeType.TIMER && (
+              <div className="space-y-4 border-t border-slate-800 pt-4">
+                 <div className="flex items-center gap-2 text-teal-400">
+                    <Clock size={16} />
+                    <span className="text-sm font-semibold">Scheduler Config</span>
+                 </div>
+                 <div>
+                    <label className="block text-xs text-slate-400 mb-2">Cron Expression</label>
+                    <input 
+                      type="text"
+                      placeholder="0 9 * * 1-5"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                      value={selectedNode.config.cron || ''}
+                      onChange={(e) => updateNodeConfig('cron', e.target.value)}
+                    />
+                    <div className="mt-2 text-[10px] text-slate-500">
+                       Example: <code className="bg-slate-800 px-1 rounded">0 9 * * 1-5</code> (Mon-Fri 9:00 AM)
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="active"
+                      checked={selectedNode.config.active !== false}
+                      onChange={(e) => updateNodeConfig('active', e.target.checked)}
+                      className="rounded bg-slate-800 border-slate-700 text-teal-600 focus:ring-teal-500"
+                    />
+                    <label htmlFor="active" className="text-sm text-slate-300">Enable Trigger</label>
+                 </div>
+              </div>
+            )}
 
             {/* DATA COLLECTION CONFIG */}
             {selectedNode.type === NodeType.DATA_COLLECT && (

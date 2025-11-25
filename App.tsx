@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { AppView, WorkflowMeta, DashboardMeta } from './types';
-import { LayoutDashboard, Workflow, LineChart, Settings, Bell, Search, User, ChevronRight, ArrowLeft } from 'lucide-react';
+import { AppView, WorkflowMeta, DashboardMeta, StrategyItem } from './types';
+import { LayoutDashboard, Workflow, LineChart, Settings, Bell, Search, User, ChevronRight, ArrowLeft, Code2 } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
 import { DashboardList } from './components/DashboardList';
+import { StrategyList } from './components/StrategyList';
+import { StrategyEditor } from './components/StrategyEditor';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(AppView.WORKFLOW);
@@ -13,6 +15,7 @@ export default function App() {
   // Navigation State
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowMeta | null>(null);
   const [selectedDashboard, setSelectedDashboard] = useState<DashboardMeta | null>(null);
+  const [selectedStrategy, setSelectedStrategy] = useState<StrategyItem | null>(null);
 
   // Navigation Handlers
   const handleNavigate = (view: AppView) => {
@@ -20,11 +23,13 @@ export default function App() {
     // Reset selections when switching main tabs
     if (view !== AppView.WORKFLOW) setSelectedWorkflow(null);
     if (view !== AppView.DASHBOARD) setSelectedDashboard(null);
+    if (view !== AppView.STRATEGIES) setSelectedStrategy(null);
   };
 
   const handleBack = () => {
     if (currentView === AppView.WORKFLOW) setSelectedWorkflow(null);
     if (currentView === AppView.DASHBOARD) setSelectedDashboard(null);
+    if (currentView === AppView.STRATEGIES) setSelectedStrategy(null);
   };
 
   const renderContent = () => {
@@ -48,6 +53,26 @@ export default function App() {
           <DashboardList 
             onSelect={(db) => setSelectedDashboard(db)} 
             onCreate={() => setSelectedDashboard({ id: 'new', name: 'New Dashboard', widgetCount: 0, updatedAt: 'Just now', thumbnailColor: 'bg-slate-800' })}
+          />
+        );
+
+      case AppView.STRATEGIES:
+        if (selectedStrategy) {
+          return <StrategyEditor strategy={selectedStrategy} onSave={(s) => setSelectedStrategy(s)} />;
+        }
+        return (
+          <StrategyList 
+            onSelect={(s) => setSelectedStrategy(s)}
+            onCreate={() => setSelectedStrategy({
+               id: 'new',
+               name: 'New Backtrader Strategy',
+               description: '',
+               code: 'import backtrader as bt\n\nclass MyStrategy(bt.Strategy):\n    def next(self):\n        pass',
+               language: 'python',
+               framework: 'backtrader',
+               updatedAt: 'Just now',
+               tags: []
+            })}
           />
         );
       
@@ -83,7 +108,16 @@ export default function App() {
            <span className="font-medium text-slate-200">{selectedDashboard.name}</span>
         </div>
       );
-   }
+    }
+    if (currentView === AppView.STRATEGIES && selectedStrategy) {
+      return (
+        <div className="flex items-center gap-2 text-sm">
+           <span className="text-slate-500 cursor-pointer hover:text-slate-300" onClick={handleBack}>Algorithms</span>
+           <ChevronRight size={14} className="text-slate-600" />
+           <span className="font-medium text-slate-200">{selectedStrategy.name}</span>
+        </div>
+      );
+    }
     return null;
   };
 
@@ -104,7 +138,13 @@ export default function App() {
             icon={<Workflow size={24} />} 
             active={currentView === AppView.WORKFLOW} 
             onClick={() => handleNavigate(AppView.WORKFLOW)}
-            label="Builder"
+            label="Workflows"
+          />
+          <SidebarItem 
+            icon={<Code2 size={24} />} 
+            active={currentView === AppView.STRATEGIES} 
+            onClick={() => handleNavigate(AppView.STRATEGIES)}
+            label="Algos"
           />
           <SidebarItem 
             icon={<LayoutDashboard size={24} />} 
@@ -135,7 +175,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             
             {/* Conditional Back Button or Title */}
-            {(selectedWorkflow || selectedDashboard) ? (
+            {(selectedWorkflow || selectedDashboard || selectedStrategy) ? (
               <div className="flex items-center gap-4">
                 <button 
                   onClick={handleBack}
@@ -148,8 +188,9 @@ export default function App() {
             ) : (
               <>
                 <h1 className="text-xl font-bold text-slate-100 tracking-tight">
-                  {currentView === AppView.WORKFLOW && 'Strategy Hub'}
+                  {currentView === AppView.WORKFLOW && 'Workflow Orchestrator'}
                   {currentView === AppView.DASHBOARD && 'Dashboard Library'}
+                  {currentView === AppView.STRATEGIES && 'Algorithm Library'}
                   {currentView === AppView.MARKET && 'Market Analysis'}
                 </h1>
                 <div className="h-4 w-px bg-slate-700 mx-2" />
@@ -163,7 +204,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {!selectedWorkflow && !selectedDashboard && (
+            {!selectedWorkflow && !selectedDashboard && !selectedStrategy && (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 <input 

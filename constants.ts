@@ -1,5 +1,5 @@
 
-import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta } from './types';
+import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta, StrategyItem } from './types';
 
 export const INITIAL_NODES = [
   {
@@ -55,6 +55,7 @@ export const NODE_COLORS = {
   [NodeType.FILTER]: 'border-rose-500 shadow-rose-500/20',
   [NodeType.EXECUTION]: 'border-green-500 shadow-green-500/20',
   [NodeType.STORAGE]: 'border-indigo-500 shadow-indigo-500/20',
+  [NodeType.TIMER]: 'border-teal-500 shadow-teal-500/20',
 };
 
 export const NODE_ICONS_COLOR = {
@@ -66,6 +67,7 @@ export const NODE_ICONS_COLOR = {
   [NodeType.FILTER]: 'text-rose-400',
   [NodeType.EXECUTION]: 'text-green-400',
   [NodeType.STORAGE]: 'text-indigo-400',
+  [NodeType.TIMER]: 'text-teal-400',
 };
 
 // --- Dashboard Initial Data ---
@@ -214,4 +216,71 @@ export const MOCK_DASHBOARDS_LIST: DashboardMeta[] = [
     updatedAt: '3 days ago',
     thumbnailColor: 'bg-blue-900/20'
   },
+];
+
+export const MOCK_STRATEGIES: StrategyItem[] = [
+  {
+    id: 'st-1',
+    name: 'Golden Cross Strategy',
+    description: 'Simple Moving Average crossover strategy. Buys when the short-term MA crosses above the long-term MA.',
+    updatedAt: '2023-10-20 10:00',
+    tags: ['Trend Following', 'Moving Average'],
+    language: 'python',
+    framework: 'backtrader',
+    code: `import backtrader as bt
+
+class GoldenCross(bt.Strategy):
+    params = (('fast', 10), ('slow', 30), ('order_percentage', 0.95), ('ticker', 'SPY'))
+
+    def __init__(self):
+        self.fast_moving_average = bt.indicators.SMA(
+            self.data.close, period=self.params.fast, plotname='50 day moving average'
+        )
+
+        self.slow_moving_average = bt.indicators.SMA(
+            self.data.close, period=self.params.slow, plotname='200 day moving average'
+        )
+
+        self.crossover = bt.indicators.CrossOver(self.fast_moving_average, self.slow_moving_average)
+
+    def next(self):
+        if self.position.size == 0:
+            if self.crossover > 0:
+                amount_to_invest = (self.params.order_percentage * self.broker.cash)
+                self.size = math.floor(amount_to_invest / self.data.close)
+
+                print("Buy {} shares of {} at {}".format(self.size, self.params.ticker, self.data.close[0]))
+                self.buy(size=self.size)
+
+        if self.position.size > 0:
+            if self.crossover < 0:
+                print("Sell {} shares of {} at {}".format(self.size, self.params.ticker, self.data.close[0]))
+                self.close()
+`
+  },
+  {
+    id: 'st-2',
+    name: 'RSI Mean Reversion',
+    description: 'Buys when RSI < 30 (Oversold) and sells when RSI > 70 (Overbought).',
+    updatedAt: '2023-10-18 15:45',
+    tags: ['Mean Reversion', 'Oscillator'],
+    language: 'python',
+    framework: 'backtrader',
+    code: `import backtrader as bt
+
+class RsiStrategy(bt.Strategy):
+    params = (('rsi_period', 14), ('rsi_low', 30), ('rsi_high', 70),)
+
+    def __init__(self):
+        self.rsi = bt.indicators.RSI(self.data.close, period=self.params.rsi_period)
+
+    def next(self):
+        if not self.position:
+            if self.rsi < self.params.rsi_low:
+                self.buy()
+        else:
+            if self.rsi > self.params.rsi_high:
+                self.close()
+`
+  }
 ];
