@@ -1,5 +1,5 @@
 
-import { NodeType, WidgetType, DataSourceType } from './types';
+import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta } from './types';
 
 export const INITIAL_NODES = [
   {
@@ -150,4 +150,68 @@ export const INITIAL_DASHBOARD_WIDGETS = [
     colSpan: 2,
     script: 'SELECT month, return_pct FROM monthly_stats'
   }
+];
+
+// --- Mock Lists ---
+
+export const MOCK_WORKFLOWS_LIST: WorkflowMeta[] = [
+  { 
+    id: 'wf-1', 
+    name: 'Moving Average Crossover', 
+    description: 'Classic trend following strategy using SMA 10/50 on Daily candles.', 
+    status: 'active', 
+    updatedAt: '2023-10-15 14:30',
+    nodesCount: 5
+  },
+  { 
+    id: 'wf-2', 
+    name: 'Grid Trading BTC/USDT', 
+    description: 'High frequency grid bot for sideways market volatility harvesting.', 
+    status: 'draft', 
+    updatedAt: '2023-10-16 09:15',
+    nodesCount: 8
+  },
+  { 
+    id: 'wf-3', 
+    name: 'Sentiment Analysis', 
+    description: 'Trade based on news sentiment scoring from NLP pipeline.', 
+    status: 'active', 
+    updatedAt: '2023-10-14 11:20',
+    nodesCount: 12
+  },
+  { 
+    id: 'wf-4', 
+    name: 'Mean Reversion RSI', 
+    description: 'Buy oversold, sell overbought on 1H timeframe.', 
+    status: 'archived', 
+    updatedAt: '2023-09-28 16:45',
+    nodesCount: 4
+  },
+];
+
+export const MOCK_DASHBOARDS_LIST: DashboardMeta[] = [
+  { 
+    id: 'db-1', 
+    name: 'Main Portfolio Overview', 
+    description: 'Aggregate view of all active strategy performance and risk metrics.', 
+    widgetCount: 8, 
+    updatedAt: '2 hours ago',
+    thumbnailColor: 'bg-emerald-900/20'
+  },
+  { 
+    id: 'db-2', 
+    name: 'Crypto Intraday Alpha', 
+    description: 'Real-time signals and execution monitoring for crypto desk.', 
+    widgetCount: 12, 
+    updatedAt: '1 day ago',
+    thumbnailColor: 'bg-purple-900/20'
+  },
+  { 
+    id: 'db-3', 
+    name: 'Forex Global Macro', 
+    description: 'Currency strength meters and economic calendar impact analysis.', 
+    widgetCount: 6, 
+    updatedAt: '3 days ago',
+    thumbnailColor: 'bg-blue-900/20'
+  },
 ];

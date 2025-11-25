@@ -81,3 +81,23 @@ export interface DashboardWidget {
   colSpan: number;     // Grid width (1-4)
   config?: any;        // Specific chart config (colors, etc)
 }
+
+// --- List View Metadata ---
+
+export interface WorkflowMeta {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'draft' | 'archived';
+  updatedAt: string;
+  nodesCount: number;
+}
+
+export interface DashboardMeta {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  updatedAt: string;
+  thumbnailColor: string;
+}
