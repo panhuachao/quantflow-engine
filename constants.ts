@@ -1,6 +1,7 @@
 
-import { NodeType, WidgetType, DataSourceType, WorkflowMeta, DashboardMeta, StrategyItem, BacktestReport } from './types';
+import { NodeType, WidgetType, DataSourceType, Workflow, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
+// Standalone defaults (kept for fallback)
 export const INITIAL_NODES = [
   {
     id: '1',
@@ -156,14 +157,22 @@ export const INITIAL_DASHBOARD_WIDGETS = [
 
 // --- Mock Lists ---
 
-export const MOCK_WORKFLOWS_LIST: WorkflowMeta[] = [
+export const MOCK_WORKFLOWS_LIST: Workflow[] = [
   { 
     id: 'wf-1', 
     name: 'Moving Average Crossover', 
     description: 'Classic trend following strategy using SMA 10/50 on Daily candles.', 
     status: 'active', 
     updatedAt: '2023-10-15 14:30',
-    nodesCount: 5
+    nodes: [
+        { id: '1', type: NodeType.DATA_COLLECT, label: 'AkShare: SPY', x: 100, y: 150, config: { source: 'AkShare', symbol: 'SPY' } },
+        { id: '2', type: NodeType.STRATEGY, label: 'SMA Cross', x: 450, y: 150, config: { fast: 10, slow: 50, description: 'Golden Cross Logic' } },
+        { id: '3', type: NodeType.EXECUTION, label: 'Paper Trading', x: 800, y: 150, config: {} }
+    ],
+    connections: [
+        { id: 'c1', sourceId: '1', targetId: '2' },
+        { id: 'c2', sourceId: '2', targetId: '3' }
+    ]
   },
   { 
     id: 'wf-2', 
@@ -171,7 +180,17 @@ export const MOCK_WORKFLOWS_LIST: WorkflowMeta[] = [
     description: 'High frequency grid bot for sideways market volatility harvesting.', 
     status: 'draft', 
     updatedAt: '2023-10-16 09:15',
-    nodesCount: 8
+    nodes: [
+        { id: '1', type: NodeType.TIMER, label: 'Every 5m', x: 50, y: 50, config: { cron: '*/5 * * * *' } },
+        { id: '2', type: NodeType.DATA_COLLECT, label: 'Binance: BTC', x: 300, y: 50, config: { source: 'Binance', symbol: 'BTCUSDT' } },
+        { id: '3', type: NodeType.SCRIPT, label: 'Calc Grid', x: 300, y: 250, config: { code: '// Grid logic...' } },
+        { id: '4', type: NodeType.EXECUTION, label: 'Limit Orders', x: 600, y: 250, config: {} }
+    ],
+    connections: [
+        { id: 'c1', sourceId: '1', targetId: '2' },
+        { id: 'c2', sourceId: '2', targetId: '3' },
+        { id: 'c3', sourceId: '3', targetId: '4' }
+    ]
   },
   { 
     id: 'wf-3', 
@@ -179,7 +198,17 @@ export const MOCK_WORKFLOWS_LIST: WorkflowMeta[] = [
     description: 'Trade based on news sentiment scoring from NLP pipeline.', 
     status: 'active', 
     updatedAt: '2023-10-14 11:20',
-    nodesCount: 12
+    nodes: [
+        { id: '1', type: NodeType.DATA_COLLECT, label: 'News Feed', x: 100, y: 100, config: { source: 'Yahoo', symbol: 'NEWS' } },
+        { id: '2', type: NodeType.SCRIPT, label: 'NLP Score', x: 400, y: 100, config: { code: 'return sentiment(data)' } },
+        { id: '3', type: NodeType.STORAGE, label: 'Log Sentiment', x: 400, y: 300, config: { dbType: 'Postgres' } },
+        { id: '4', type: NodeType.STRATEGY, label: 'Long/Short', x: 700, y: 100, config: {} }
+    ],
+    connections: [
+        { id: 'c1', sourceId: '1', targetId: '2' },
+        { id: 'c2', sourceId: '2', targetId: '3' },
+        { id: 'c3', sourceId: '2', targetId: '4' }
+    ]
   },
   { 
     id: 'wf-4', 
@@ -187,7 +216,8 @@ export const MOCK_WORKFLOWS_LIST: WorkflowMeta[] = [
     description: 'Buy oversold, sell overbought on 1H timeframe.', 
     status: 'archived', 
     updatedAt: '2023-09-28 16:45',
-    nodesCount: 4
+    nodes: [],
+    connections: []
   },
 ];
 
@@ -341,64 +371,3 @@ export const MOCK_REPORT_HTML = `
   </div>
 </body>
 </html>
-`;
-
-export const MOCK_BACKTEST_REPORTS: BacktestReport[] = [
-  {
-    id: 'bt-1',
-    strategyId: 'st-1',
-    strategyName: 'Golden Cross Strategy',
-    symbol: 'SPY',
-    interval: '1d',
-    startDate: '2023-01-01',
-    endDate: '2023-10-01',
-    initialCash: 100000,
-    finalValue: 115400,
-    returnPct: 15.4,
-    sharpeRatio: 1.2,
-    maxDrawdown: -8.5,
-    tradeCount: 24,
-    winRate: 62.5,
-    status: 'completed',
-    createdAt: '2023-10-21 14:00',
-    reportHtml: MOCK_REPORT_HTML
-  },
-  {
-    id: 'bt-2',
-    strategyId: 'st-2',
-    strategyName: 'RSI Mean Reversion',
-    symbol: 'BTCUSDT',
-    interval: '1h',
-    startDate: '2023-09-01',
-    endDate: '2023-10-01',
-    initialCash: 10000,
-    finalValue: 12100,
-    returnPct: 21.0,
-    sharpeRatio: 2.1,
-    maxDrawdown: -14.2,
-    tradeCount: 156,
-    winRate: 48.2,
-    status: 'completed',
-    createdAt: '2023-10-21 16:30',
-    reportHtml: MOCK_REPORT_HTML
-  },
-  {
-    id: 'bt-3',
-    strategyId: 'st-1',
-    strategyName: 'Golden Cross Strategy',
-    symbol: 'AAPL',
-    interval: '1d',
-    startDate: '2022-01-01',
-    endDate: '2023-01-01',
-    initialCash: 100000,
-    finalValue: 92000,
-    returnPct: -8.0,
-    sharpeRatio: -0.4,
-    maxDrawdown: -22.0,
-    tradeCount: 12,
-    winRate: 33.3,
-    status: 'completed',
-    createdAt: '2023-10-10 09:15',
-    reportHtml: MOCK_REPORT_HTML
-  }
-];

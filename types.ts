@@ -131,6 +131,17 @@ export interface WorkflowMeta {
   nodesCount: number;
 }
 
+// Updated Workflow Interface
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'draft' | 'archived';
+  updatedAt: string;
+  nodes: NodeData[];       // Added
+  connections: Connection[]; // Added
+}
+
 export interface DashboardMeta {
   id: string;
   name: string;
