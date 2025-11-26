@@ -145,6 +145,24 @@ export interface DashboardMeta {
   thumbnailColor: string;
 }
 
+// --- Execution & Logs ---
+
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  nodeId?: string;
+  level: 'info' | 'success' | 'error' | 'warn';
+  message: string;
+}
+
+export interface ExecutionHistoryItem {
+  id: string;
+  timestamp: string;
+  status: 'success' | 'failed';
+  duration: number; // ms
+  logs: LogEntry[];
+}
+
 // --- New Modular Architecture Types ---
 
 export interface ExecutionContext {

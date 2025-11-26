@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { NodeData, Connection, NodeType, Workflow } from '../types';
+import { NodeData, Connection, NodeType, Workflow, LogEntry, ExecutionHistoryItem } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from '../constants';
-import { PlayCircle, Save, Clock, Plus, Minus, Maximize, Move, Terminal, CheckCircle, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { PlayCircle, Save, Clock, Plus, Minus, Maximize, Move, Terminal, CheckCircle, ChevronDown, ChevronUp, ArrowLeft, History, X, AlertCircle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { NodeCard } from './workflow/NodeCard';
 import { PropertiesPanel } from './workflow/PropertiesPanel';
@@ -13,22 +13,14 @@ const getBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
   return `M${x1},${y1} C${x1 + 100},${y1} ${x2 - 100},${y2} ${x2},${y2}`;
 };
 
-interface LogEntry {
-  id: string;
-  timestamp: string;
-  nodeId?: string;
-  level: 'info' | 'success' | 'error' | 'warn';
-  message: string;
-}
-
-const LogPanel = ({ logs, isOpen, onToggle, onClear }: { logs: LogEntry[], isOpen: boolean, onToggle: () => void, onClear: () => void }) => {
+const LogPanel = ({ logs, isOpen, onToggle, onClear, title }: { logs: LogEntry[], isOpen: boolean, onToggle: () => void, onClear: () => void, title?: string }) => {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs, isOpen]);
   return (
     <div className={`absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 transition-all duration-300 z-30 flex flex-col ${isOpen ? 'h-64' : 'h-10'}`}>
        <div className="flex items-center justify-between px-4 h-10 bg-slate-800 cursor-pointer hover:bg-slate-700 select-none" onClick={onToggle}>
          <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-           <Terminal size={14} /> <span>System Console {logs.length > 0 && `(${logs.length})`}</span>
+           <Terminal size={14} /> <span>{title || 'System Console'} {logs.length > 0 && `(${logs.length})`}</span>
          </div>
          <div className="flex items-center gap-2">
             {isOpen && <button onClick={(e) => { e.stopPropagation(); onClear(); }} className="text-[10px] text-slate-500 hover:text-red-400 px-2">Clear</button>}
@@ -37,7 +29,7 @@ const LogPanel = ({ logs, isOpen, onToggle, onClear }: { logs: LogEntry[], isOpe
        </div>
        {isOpen && (
          <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1 bg-slate-950/50">
-            {logs.length === 0 && <div className="text-slate-600 italic">No execution logs...</div>}
+            {logs.length === 0 && <div className="text-slate-600 italic">No logs available...</div>}
             {logs.map(log => (
               <div key={log.id} className="flex gap-3">
                  <span className="text-slate-600 shrink-0">[{log.timestamp}]</span>
@@ -50,6 +42,43 @@ const LogPanel = ({ logs, isOpen, onToggle, onClear }: { logs: LogEntry[], isOpe
             <div ref={endRef} />
          </div>
        )}
+    </div>
+  );
+};
+
+const HistoryPanel = ({ history, onClose, onSelect }: { history: ExecutionHistoryItem[], onClose: () => void, onSelect: (item: ExecutionHistoryItem) => void }) => {
+  return (
+    <div className="absolute top-20 right-4 bottom-20 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+       <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+          <h3 className="font-bold text-slate-200 flex items-center gap-2"><History size={16}/> Execution History</h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={16}/></button>
+       </div>
+       <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {history.length === 0 && (
+            <div className="text-center text-slate-500 text-xs py-8">No execution history yet.<br/>Run the workflow to generate logs.</div>
+          )}
+          {history.map(item => (
+            <div 
+              key={item.id} 
+              onClick={() => onSelect(item)}
+              className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/50 cursor-pointer transition-all group"
+            >
+               <div className="flex justify-between items-start mb-1">
+                  <div className="flex items-center gap-2">
+                     <div className={`w-2 h-2 rounded-full ${item.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`} />
+                     <span className="text-xs font-medium text-slate-200">{item.timestamp}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">{(item.duration / 1000).toFixed(2)}s</span>
+               </div>
+               <div className="text-[10px] text-slate-500 pl-4">
+                  {item.logs.length} log entries recorded.
+               </div>
+               <div className="text-[10px] text-cyan-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Click to view details &rarr;
+               </div>
+            </div>
+          ))}
+       </div>
     </div>
   );
 };
@@ -85,10 +114,18 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
   const [connectingSourceId, setConnectingSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
-  // Execution
+  // Execution State
   const [isRunning, setIsRunning] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  
+  // Logs & History State
+  const [logs, setLogs] = useState<LogEntry[]>([]); // Current active logs
+  const [history, setHistory] = useState<ExecutionHistoryItem[]>([]);
   const [isLogPanelOpen, setIsLogPanelOpen] = useState(false);
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  const [viewingHistoryItem, setViewingHistoryItem] = useState<ExecutionHistoryItem | null>(null);
+  
+  // We use a ref to accumulate logs during a run to avoid closure staleness in the loop
+  const currentRunLogs = useRef<LogEntry[]>([]);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 }); 
@@ -97,7 +134,13 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
   const selectedNode = singleSelectedNodeId ? nodes.find(n => n.id === singleSelectedNodeId) : null;
 
   const addLog = (message: string, level: LogEntry['level'] = 'info', nodeId?: string) => {
-    setLogs(prev => [...prev, { id: Date.now().toString() + Math.random(), timestamp: new Date().toLocaleTimeString(), level, message, nodeId }]);
+    const entry: LogEntry = { id: Date.now().toString() + Math.random(), timestamp: new Date().toLocaleTimeString(), level, message, nodeId };
+    // If running, push to Ref, otherwise just update state (e.g. Save action)
+    if (isRunning) {
+        currentRunLogs.current.push(entry);
+    }
+    // Always update UI
+    setLogs(prev => [...prev, entry]);
   };
 
   const handleSave = () => {
@@ -160,9 +203,16 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
   // --- REFACTORED SIMULATION LOGIC ---
   const runSimulation = async () => {
     if (isRunning) return;
+    
+    // Reset View
+    setViewingHistoryItem(null); 
+    setLogs([]); 
+    currentRunLogs.current = [];
+    
     setIsRunning(true);
     setIsLogPanelOpen(true);
-    setLogs([]);
+    
+    const startTime = Date.now();
     addLog("Initializing workflow engine...", 'info');
     
     // Data Context: Maps NodeID -> Output Data
@@ -176,6 +226,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
     const roots = nodes.filter(n => !targets.has(n.id));
     const queue = roots.length > 0 ? [...roots] : [nodes[0]]; // Fallback to first if cycle or no roots
     const visited = new Set<string>();
+    let hasError = false;
 
     while (queue.length > 0) {
         const batch = [...queue];
@@ -210,6 +261,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
             } catch (err: any) {
                 executionResult = { status: 'error', output: null };
                 addLog(`Error executing node: ${err.message}`, 'error', node.id);
+                hasError = true;
             }
 
             // 3. Store Output
@@ -228,8 +280,29 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
             }
         }));
     }
-    addLog("Workflow execution completed.", 'success');
+    
+    const endTime = Date.now();
+    addLog("Workflow execution completed.", hasError ? 'error' : 'success');
+    
+    // Save to History
+    const historyItem: ExecutionHistoryItem = {
+        id: Date.now().toString(),
+        timestamp: new Date().toLocaleString(),
+        status: hasError ? 'failed' : 'success',
+        duration: endTime - startTime,
+        logs: [...currentRunLogs.current] // Capture copy of logs
+    };
+    
+    setHistory(prev => [historyItem, ...prev]);
     setIsRunning(false);
+  };
+
+  const handleRestoreHistory = (item: ExecutionHistoryItem) => {
+      setViewingHistoryItem(item);
+      setLogs(item.logs);
+      setIsLogPanelOpen(true);
+      // Optional: Reset node statuses to idle to avoid confusion, or map them if we tracked node status in history
+      setNodes(prev => prev.map(n => ({ ...n, status: 'idle' })));
   };
 
   // Define allowed nodes in palette
@@ -264,6 +337,15 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
          </div>
          <div className="flex items-center gap-2">
              <Button variant="secondary" size="sm" onClick={() => addLog("Validated graph structure.", "info")} icon={<CheckCircle size={16}/>}>Validate</Button>
+             <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)} 
+                icon={<History size={16}/>}
+                className={isHistoryPanelOpen ? 'bg-slate-700 text-cyan-400' : ''}
+             >
+                History
+             </Button>
              {onSave && <Button variant="primary" size="sm" onClick={handleSave} icon={<Save size={16}/>}>Save Changes</Button>}
          </div>
       </div>
@@ -332,7 +414,8 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
             ))}
         </div>
 
-        <div className="absolute bottom-12 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
+        {/* View Controls */}
+        <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
             <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="p-2 text-slate-400 hover:text-white rounded"><Minus size={16} /></button>
             <div className="text-xs font-mono text-slate-500 w-12 text-center select-none">{Math.round(zoom * 100)}%</div>
             <button onClick={() => setZoom(z => Math.min(2.0, z + 0.1))} className="p-2 text-slate-400 hover:text-white rounded"><Plus size={16} /></button>
@@ -340,20 +423,43 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
             <div className="w-px h-4 bg-slate-800 mx-1"/>
             <div className="flex items-center gap-2 px-2 text-[10px] text-slate-500"><Move size={12} /><span>Space+Drag</span></div>
         </div>
+
+        {/* Execute Button - MOVED TO CENTER BOTTOM */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+           <Button size="lg" className={`rounded-full shadow-2xl pl-6 pr-8 py-4 border-4 border-slate-900 ${isRunning ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}`} onClick={runSimulation} disabled={isRunning}>
+              <div className="flex items-center gap-3">
+                 {isRunning ? <Clock className="w-5 h-5 animate-spin" /> : <PlayCircle fill="currentColor" className="w-5 h-5" />}
+                 <div className="text-left"><div className="text-xs font-medium opacity-80 uppercase tracking-wider">{isRunning ? 'Running...' : 'Ready'}</div><div className="font-bold">{isRunning ? 'Executing Flow' : 'Deploy Strategy'}</div></div>
+              </div>
+           </Button>
+        </div>
       </div>
 
-      {selectedNode && <PropertiesPanel node={selectedNode} onUpdate={(k, v) => setNodes(nodes.map(n => n.id === selectedNode.id ? (k.startsWith('config.') ? {...n, config: {...n.config, [k.split('.')[1]]: v}} : {...n, [k]: v}) : n))} onClose={() => setSelectedIds(new Set())} onDelete={() => { setNodes(nodes.filter(n => n.id !== selectedNode.id)); setSelectedIds(new Set()); }} />}
+      {/* Panels */}
+      {selectedNode && (
+          <PropertiesPanel 
+            node={selectedNode} 
+            onUpdate={(k, v) => setNodes(nodes.map(n => n.id === selectedNode.id ? (k.startsWith('config.') ? {...n, config: {...n.config, [k.split('.')[1]]: v}} : {...n, [k]: v}) : n))} 
+            onClose={() => setSelectedIds(new Set())} 
+            onDelete={() => { setNodes(nodes.filter(n => n.id !== selectedNode.id)); setSelectedIds(new Set()); }} 
+          />
+      )}
       
-      <LogPanel logs={logs} isOpen={isLogPanelOpen} onToggle={() => setIsLogPanelOpen(!isLogPanelOpen)} onClear={() => setLogs([])} />
+      {isHistoryPanelOpen && (
+        <HistoryPanel 
+           history={history} 
+           onClose={() => setIsHistoryPanelOpen(false)} 
+           onSelect={handleRestoreHistory}
+        />
+      )}
       
-      <div className="absolute bottom-12 right-6 z-20">
-         <Button size="lg" className={`rounded-full shadow-2xl pl-6 pr-8 py-4 border-4 border-slate-900 ${isRunning ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}`} onClick={runSimulation} disabled={isRunning}>
-            <div className="flex items-center gap-3">
-               {isRunning ? <Clock className="w-5 h-5 animate-spin" /> : <PlayCircle fill="currentColor" className="w-5 h-5" />}
-               <div className="text-left"><div className="text-xs font-medium opacity-80 uppercase tracking-wider">{isRunning ? 'Running...' : 'Ready'}</div><div className="font-bold">{isRunning ? 'Executing Flow' : 'Deploy Strategy'}</div></div>
-            </div>
-         </Button>
-      </div>
+      <LogPanel 
+        logs={logs} 
+        isOpen={isLogPanelOpen} 
+        onToggle={() => setIsLogPanelOpen(!isLogPanelOpen)} 
+        onClear={() => setLogs([])} 
+        title={viewingHistoryItem ? `Log Record (${viewingHistoryItem.timestamp})` : 'System Console'}
+      />
     </div>
   );
 }
