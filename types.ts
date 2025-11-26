@@ -42,6 +42,7 @@ export enum AppView {
   MARKET = 'MARKET',
   STRATEGIES = 'STRATEGIES',
   BACKTESTS = 'BACKTESTS', 
+  DATASOURCES = 'DATASOURCES',
 }
 
 export interface StrategyConfig {
@@ -94,18 +95,25 @@ export enum DataSourceType {
   SQLITE = 'SQLite',
   MYSQL = 'MySQL',
   POSTGRES = 'PostgreSQL',
-  REST_API = 'REST API'
+}
+
+export interface DataSourceConfig {
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  database?: string;
+  filePath?: string; // For SQLite
+  options?: string;
 }
 
 export interface DataSource {
   id: string;
   name: string;
   type: DataSourceType;
-  config: {
-    connectionString?: string;
-    filePath?: string;
-    auth?: string;
-  };
+  config: DataSourceConfig;
+  updatedAt: string;
+  status: 'active' | 'error';
 }
 
 export enum WidgetType {

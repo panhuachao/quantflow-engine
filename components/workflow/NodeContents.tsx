@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NodeType } from '../../types';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { dataSourceService } from '../../services/dataSourceService';
 
 export const DataCollectContent = ({ config }: { config: any }) => {
   const { t } = useTranslation();
@@ -33,9 +33,19 @@ export const TimerContent = ({ config }: { config: any }) => {
 
 export const StorageContent = ({ config }: { config: any }) => {
   const { t } = useTranslation();
+  const [dsName, setDsName] = useState(config.dbType || 'Local');
+
+  useEffect(() => {
+    if (config.dataSourceId) {
+        dataSourceService.getById(config.dataSourceId).then(ds => {
+            if (ds) setDsName(ds.name);
+        });
+    }
+  }, [config.dataSourceId]);
+
   return (
     <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
-      <div className="text-slate-400">{config.dbType || 'Storage'}</div>
+      <div className="text-slate-400 truncate">{dsName}</div>
       <div className="text-indigo-300 truncate" title={config.table}>{config.table ? `${t('node.content.table')}: ${config.table}` : t('node.content.no_table')}</div>
     </div>
   );
@@ -73,9 +83,24 @@ export const LLMContent = ({ config }: { config: any }) => {
 
 export const DatabaseQueryContent = ({ config }: { config: any }) => {
   const { t } = useTranslation();
+  const [dsName, setDsName] = useState('...');
+
+  useEffect(() => {
+    if (config.dataSourceId) {
+        dataSourceService.getById(config.dataSourceId).then(ds => {
+            if (ds) setDsName(ds.name);
+            else setDsName('Unknown');
+        });
+    } else if (config.connectionString) {
+        setDsName(t('node.content.conn'));
+    } else {
+        setDsName(t('node.content.no_conn'));
+    }
+  }, [config.dataSourceId, config.connectionString, t]);
+
   return (
     <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px]">
-      <div className="text-sky-300 font-mono truncate mb-1">{config.connectionString ? t('node.content.conn') : t('node.content.no_conn')}</div>
+      <div className="text-sky-300 font-mono truncate mb-1">{dsName}</div>
       <div className="text-slate-500 truncate italic">{config.query || 'SELECT * FROM ...'}</div>
     </div>
   );

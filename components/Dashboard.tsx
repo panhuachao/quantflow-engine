@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -8,12 +7,14 @@ import {
 import { 
   Settings, Plus, Trash2, Edit2, Database, Save, 
   LayoutGrid, Activity, DollarSign, TrendingUp, BarChart3, PieChart as PieIcon,
-  Table as TableIcon
+  Table as TableIcon, ExternalLink
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { DataSource, DashboardWidget, WidgetType, DataSourceType } from '../types';
-import { INITIAL_DATA_SOURCES, INITIAL_DASHBOARD_WIDGETS } from '../constants';
+import { INITIAL_DASHBOARD_WIDGETS } from '../constants';
 import { useTranslation } from '../contexts/LanguageContext';
+import { dataSourceService } from '../services/dataSourceService';
+import { useNavigate } from 'react-router-dom';
 
 // --- MOCK DATA GENERATORS ---
 const generateTimeSeriesData = (points = 20) => Array.from({ length: points }, (_, i) => ({
@@ -86,74 +87,6 @@ const StatCard = ({ widget }: { widget: DashboardWidget }) => {
   );
 };
 
-const DataSourceModal = ({ 
-  isOpen, 
-  onClose, 
-  dataSources, 
-  onAdd 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  dataSources: DataSource[];
-  onAdd: (ds: DataSource) => void;
-}) => {
-  const [name, setName] = useState('');
-  const [type, setType] = useState<DataSourceType>(DataSourceType.SQLITE);
-  const [conn, setConn] = useState('');
-  const { t } = useTranslation();
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Database size={20} className="text-cyan-400"/> {t('dash.manage_sources')}
-        </h3>
-        
-        <div className="space-y-3 max-h-60 overflow-y-auto mb-6">
-          {dataSources.map(ds => (
-            <div key={ds.id} className="flex justify-between items-center p-3 bg-slate-800 rounded border border-slate-700">
-              <div>
-                <div className="text-sm font-semibold text-slate-200">{ds.name}</div>
-                <div className="text-xs text-slate-500">{ds.type}</div>
-              </div>
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-slate-800 pt-4 space-y-4">
-          <h4 className="text-sm font-medium text-slate-400">{t('dash.add_conn')}</h4>
-          <input 
-            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" 
-            placeholder="Source Name"
-            value={name} onChange={e => setName(e.target.value)}
-          />
-          <select 
-            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none"
-            value={type} onChange={e => setType(e.target.value as DataSourceType)}
-          >
-            {Object.values(DataSourceType).map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <input 
-            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" 
-            placeholder="Connection String / File Path"
-            value={conn} onChange={e => setConn(e.target.value)}
-          />
-          <div className="flex gap-2 justify-end mt-4">
-            <Button variant="ghost" onClick={onClose}>{t('dash.cancel')}</Button>
-            <Button onClick={() => {
-              onAdd({ id: Date.now().toString(), name, type, config: { connectionString: conn } });
-              setName(''); setConn('');
-            }}>Add Source</Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const WidgetEditor = ({
   isOpen,
   widget,
@@ -189,7 +122,7 @@ const WidgetEditor = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
         <h3 className="text-xl font-bold text-white mb-4">
           {widget ? t('dash.edit_widget') : t('dash.add_widget')}
         </h3>
@@ -243,7 +176,7 @@ const WidgetEditor = ({
           <div>
              <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.query')}</label>
              <textarea 
-               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-300 h-24"
+               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-300 h-24 resize-none"
                placeholder="SELECT * FROM data..."
                value={localWidget.script || ''}
                onChange={e => setLocalWidget({...localWidget, script: e.target.value})}
@@ -264,12 +197,16 @@ const WidgetEditor = ({
 
 export const Dashboard: React.FC = () => {
   const [widgets, setWidgets] = useState<DashboardWidget[]>(INITIAL_DASHBOARD_WIDGETS);
-  const [dataSources, setDataSources] = useState<DataSource[]>(INITIAL_DATA_SOURCES);
+  const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
-  const [isDSModalOpen, setIsDSModalOpen] = useState(false);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    dataSourceService.getAll().then(setDataSources);
+  }, []);
 
   // Helper to render chart based on type
   const renderChart = (widget: DashboardWidget) => {
@@ -410,10 +347,10 @@ export const Dashboard: React.FC = () => {
            <Button 
              variant="ghost" 
              size="sm" 
-             onClick={() => setIsDSModalOpen(true)}
+             onClick={() => navigate('/datasources')}
              icon={<Database size={16} />}
            >
-             {t('dash.data_sources')}
+             {t('dash.manage_sources')}
            </Button>
         </div>
       </div>
@@ -493,13 +430,6 @@ export const Dashboard: React.FC = () => {
           setIsWidgetModalOpen(false);
         }}
         dataSources={dataSources}
-      />
-
-      <DataSourceModal 
-        isOpen={isDSModalOpen}
-        onClose={() => setIsDSModalOpen(false)}
-        dataSources={dataSources}
-        onAdd={(ds) => setDataSources([...dataSources, ds])}
       />
     </div>
   );

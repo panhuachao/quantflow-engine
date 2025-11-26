@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Outlet, useParams, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe } from 'lucide-react';
+import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe, Database } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
@@ -10,6 +10,7 @@ import { StrategyEditor } from './components/StrategyEditor';
 import { BacktestList } from './components/BacktestList';
 import { BacktestDetail } from './components/BacktestDetail';
 import { MarketAnalysis } from './components/MarketAnalysis';
+import { DataSourceList } from './components/DataSourceList';
 import { workflowService } from './services/workflowService';
 import { strategyService } from './services/strategyService';
 import { backtestService } from './services/backtestService';
@@ -30,6 +31,7 @@ const Layout = () => {
     if (path.startsWith('/backtests')) return t('header.title.evals');
     if (path.startsWith('/dashboards')) return t('header.title.dash');
     if (path.startsWith('/market')) return t('header.title.market');
+    if (path.startsWith('/datasources')) return t('header.title.datasources');
     return t('header.title.default');
   };
 
@@ -54,6 +56,7 @@ const Layout = () => {
           <SidebarItem icon={<ClipboardList size={24} />} active={isActive('/backtests')} onClick={() => navigate('/backtests')} label={t('nav.evals')} />
           <SidebarItem icon={<LayoutDashboard size={24} />} active={isActive('/dashboards')} onClick={() => navigate('/dashboards')} label={t('nav.dash')} />
           <SidebarItem icon={<LineChart size={24} />} active={isActive('/market')} onClick={() => navigate('/market')} label={t('nav.market')} />
+          <SidebarItem icon={<Database size={24} />} active={isActive('/datasources')} onClick={() => navigate('/datasources')} label={t('nav.datasources')} />
         </nav>
 
         <div className="mt-auto flex flex-col gap-4 w-full px-2">
@@ -245,6 +248,7 @@ export default function App() {
              <Route path=":id" element={<DashboardPage />} />
           </Route>
           <Route path="market" element={<MarketAnalysis />} />
+          <Route path="datasources" element={<DataSourceList />} />
         </Route>
       </Routes>
     </LanguageProvider>

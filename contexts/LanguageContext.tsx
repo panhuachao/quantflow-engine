@@ -11,6 +11,7 @@ const translations = {
     'nav.dash': '看板',
     'nav.market': '行情',
     'nav.settings': '设置',
+    'nav.datasources': '数据源',
 
     // Header
     'header.system_operational': '系统运行正常',
@@ -20,6 +21,7 @@ const translations = {
     'header.title.evals': '回测评估',
     'header.title.dash': '数据看板库',
     'header.title.market': '市场行情分析',
+    'header.title.datasources': '数据源管理',
     'header.title.default': 'QuantFlow AI',
 
     // Workflow List
@@ -58,6 +60,7 @@ const translations = {
     'node.timer.cron': 'Cron 表达式',
     'node.db.query_config': '数据查询配置',
     'node.db.conn_string': '连接字符串',
+    'node.db.select_source': '选择数据源',
     'node.db.query': 'SQL 查询语句',
     'node.db.validate': '验证查询',
     'node.http.config': 'HTTP 请求配置',
@@ -85,8 +88,8 @@ const translations = {
     'node.content.symbol': '代码',
     'node.content.code': '代码',
     'node.content.model': '模型',
-    'node.content.conn': '连接配置',
-    'node.content.no_conn': '未配置连接',
+    'node.content.conn': '数据源',
+    'node.content.no_conn': '未选择数据源',
     'node.content.table': '表名',
     'node.content.no_table': '未设置表名',
 
@@ -101,10 +104,10 @@ const translations = {
     'dash.edit': '编辑看板',
     'dash.done': '完成编辑',
     'dash.add_widget': '添加组件',
-    'dash.data_sources': '数据源',
+    'dash.data_sources': '数据源管理',
     'dash.save_config': '保存配置',
     'dash.cancel': '取消',
-    'dash.manage_sources': '管理数据源',
+    'dash.manage_sources': '前往数据源中心',
     'dash.add_conn': '添加新连接',
     'dash.edit_widget': '编辑组件',
     'dash.widget.title': '标题',
@@ -164,6 +167,22 @@ const translations = {
     'market.click_analyze': '点击“分析”以使用 AI 生成即时技术摘要。',
     'market.btn.analyze': '分析市场数据',
     'market.btn.update_analysis': '更新分析',
+
+    // Data Sources
+    'ds.title': '数据源管理',
+    'ds.desc': '集中管理所有数据库连接（SQLite, MySQL, PostgreSQL）。',
+    'ds.add_new': '添加数据源',
+    'ds.new_title': '新建连接',
+    'ds.edit_title': '编辑连接',
+    'ds.name': '连接名称',
+    'ds.type': '数据库类型',
+    'ds.host': '主机 (Host)',
+    'ds.port': '端口 (Port)',
+    'ds.username': '用户名',
+    'ds.password': '密码',
+    'ds.database': '数据库名',
+    'ds.file_path': '文件路径 (SQLite)',
+    'ds.test_conn': '测试连接',
   },
   en: {
     // Sidebar
@@ -173,6 +192,7 @@ const translations = {
     'nav.dash': 'Dash',
     'nav.market': 'Market',
     'nav.settings': 'Settings',
+    'nav.datasources': 'Data Sources',
 
     // Header
     'header.system_operational': 'System Operational',
@@ -182,6 +202,7 @@ const translations = {
     'header.title.evals': 'Backtest Evaluations',
     'header.title.dash': 'Dashboard Library',
     'header.title.market': 'Market Analysis',
+    'header.title.datasources': 'Data Sources',
     'header.title.default': 'QuantFlow AI',
 
     // Workflow List
@@ -220,6 +241,7 @@ const translations = {
     'node.timer.cron': 'Cron Expression',
     'node.db.query_config': 'Data Query Config',
     'node.db.conn_string': 'Connection String',
+    'node.db.select_source': 'Select Data Source',
     'node.db.query': 'SQL Query',
     'node.db.validate': 'Validate Query',
     'node.http.config': 'HTTP Request Config',
@@ -247,8 +269,8 @@ const translations = {
     'node.content.symbol': 'Symbol',
     'node.content.code': 'Code',
     'node.content.model': 'Model',
-    'node.content.conn': 'Conn Config',
-    'node.content.no_conn': 'No Connection',
+    'node.content.conn': 'Source',
+    'node.content.no_conn': 'No Source',
     'node.content.table': 'Table',
     'node.content.no_table': 'No Table',
 
@@ -263,10 +285,10 @@ const translations = {
     'dash.edit': 'Edit Dashboard',
     'dash.done': 'Done Editing',
     'dash.add_widget': 'Add Widget',
-    'dash.data_sources': 'Data Sources',
+    'dash.data_sources': 'Manage Sources',
     'dash.save_config': 'Save Configuration',
     'dash.cancel': 'Cancel',
-    'dash.manage_sources': 'Manage Data Sources',
+    'dash.manage_sources': 'Go to Data Sources',
     'dash.add_conn': 'Add New Connection',
     'dash.edit_widget': 'Edit Widget',
     'dash.widget.title': 'Title',
@@ -326,6 +348,22 @@ const translations = {
     'market.click_analyze': 'Click "Analyze" to generate an instant technical summary using AI.',
     'market.btn.analyze': 'Analyze Market Data',
     'market.btn.update_analysis': 'Update Analysis',
+
+    // Data Sources
+    'ds.title': 'Data Sources',
+    'ds.desc': 'Centralize all your database connections (SQLite, MySQL, PostgreSQL).',
+    'ds.add_new': 'Add Data Source',
+    'ds.new_title': 'New Connection',
+    'ds.edit_title': 'Edit Connection',
+    'ds.name': 'Connection Name',
+    'ds.type': 'Database Type',
+    'ds.host': 'Host',
+    'ds.port': 'Port',
+    'ds.username': 'Username',
+    'ds.password': 'Password',
+    'ds.database': 'Database',
+    'ds.file_path': 'File Path (SQLite)',
+    'ds.test_conn': 'Test Connection',
   }
 };
 

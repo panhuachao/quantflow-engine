@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { NodeType, NodeDefinition, ExecutionContext, ExecutionResult } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { NodeType, NodeDefinition, ExecutionContext, ExecutionResult, DataSource } from '../../types';
 import { 
   Clock, Search, Globe, FileCode, TrendingUp, Save, 
   Database, Filter, PlayCircle, MoreHorizontal, DownloadCloud, Code, BrainCircuit, Sparkles 
@@ -8,6 +7,7 @@ import {
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { NODE_CONTENT_REGISTRY } from './NodeContents';
+import { dataSourceService } from '../../services/dataSourceService';
 
 // --- Helper Components for Config ---
 
@@ -68,6 +68,39 @@ const ConfigSlider = ({ label, value, onChange, min, max, step }: any) => (
   </div>
 );
 
+const DataSourceSelect = ({ label, value, onChange }: any) => {
+  const [sources, setSources] = useState<DataSource[]>([]);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    dataSourceService.getAll().then(setSources);
+  }, []);
+
+  return (
+    <div className="mb-4">
+      <label className="block text-xs text-slate-400 mb-2">{label}</label>
+      <select
+        className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-cyan-500"
+        value={value || ''}
+        onChange={(e) => {
+           const val = e.target.value;
+           const selectedSource = sources.find(s => s.id === val);
+           // Pass both ID and Name to config for preview purposes, though ID is source of truth
+           // onChange in PropertiesPanel usually merges. We might need a way to pass multiple updates.
+           // For now, we just pass the ID. The Preview component needs to look it up or parent handles it.
+           // To keep it simple, we just set dataSourceId.
+           onChange(val);
+        }}
+      >
+        <option value="">-- {t('node.db.select_source')} --</option>
+        {sources.map(s => (
+          <option key={s.id} value={s.id}>{s.name} ({s.type})</option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
 // --- 1. TIMER NODE ---
 
 const TimerNode: NodeDefinition = {
@@ -124,12 +157,16 @@ const DatabaseQueryNode: NodeDefinition = {
           <Search size={16} />
           <span className="text-sm font-semibold">{t('node.db.query_config')}</span>
         </div>
-        <ConfigInput 
-          label={t('node.db.conn_string')} 
-          value={config.connectionString} 
-          onChange={(v: string) => onUpdate('connectionString', v)} 
-          placeholder="postgres://user:pass@localhost:5432/db"
+        
+        <DataSourceSelect 
+            label={t('node.db.select_source')}
+            value={config.dataSourceId}
+            onChange={(v: string) => {
+                onUpdate('dataSourceId', v);
+                // Optional: Store source name for static preview if fetching async is hard in preview
+            }}
         />
+
         <ConfigTextArea 
           label={t('node.db.query')} 
           value={config.query} 
@@ -145,9 +182,21 @@ const DatabaseQueryNode: NodeDefinition = {
   PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.DATABASE_QUERY],
 
   execute: async ({ config, log }) => {
-    // Mock Execution
-    log(`Connecting to ${config.connectionString ? 'Database' : 'Localhost'}...`);
+    // Look up Data Source
+    let connectionInfo = 'Unknown Source';
+    if (config.dataSourceId) {
+        const ds = await dataSourceService.getById(config.dataSourceId);
+        if (ds) connectionInfo = `${ds.name} (${ds.type})`;
+    }
+
+    log(`Connecting to ${connectionInfo}...`);
     await new Promise(r => setTimeout(r, 600));
+    
+    // Fallback for legacy config if present
+    if (!config.dataSourceId && config.connectionString) {
+        log(`Using legacy connection string: ${config.connectionString}`);
+    }
+
     const rows = Math.floor(Math.random() * 100) + 1;
     log(`Executed query. Fetched ${rows} rows.`, 'success');
     return { 
@@ -400,12 +449,13 @@ const StorageNode: NodeDefinition = {
           <Save size={16} />
           <span className="text-sm font-semibold">{t('node.storage.config')}</span>
         </div>
-        <ConfigSelect 
-          label={t('node.storage.type')}
-          value={config.dbType || 'SQLite'} 
-          onChange={(v: string) => onUpdate('dbType', v)}
-          options={[{label: 'SQLite', value: 'SQLite'}, {label: 'MySQL', value: 'MySQL'}, {label: 'PostgreSQL', value: 'PostgreSQL'}]}
+        
+        <DataSourceSelect 
+            label={t('node.db.select_source')}
+            value={config.dataSourceId}
+            onChange={(v: string) => onUpdate('dataSourceId', v)}
         />
+        
         <ConfigInput label={t('node.storage.table')} value={config.table} onChange={(v: string) => onUpdate('table', v)} placeholder="results_table" />
       </div>
     );
@@ -414,7 +464,13 @@ const StorageNode: NodeDefinition = {
   PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.STORAGE],
 
   execute: async ({ config, inputs, log }) => {
-    log(`Opening connection to ${config.dbType || 'SQLite'}...`);
+    let connectionInfo = 'Local';
+    if (config.dataSourceId) {
+        const ds = await dataSourceService.getById(config.dataSourceId);
+        if (ds) connectionInfo = `${ds.name} (${ds.type})`;
+    }
+
+    log(`Opening connection to ${connectionInfo}...`);
     log(`Writing ${inputs.length} records to table '${config.table || 'default'}'...`);
     await new Promise(r => setTimeout(r, 500));
     log('Write confirmed.', 'success');
