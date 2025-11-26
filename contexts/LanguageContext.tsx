@@ -43,6 +43,33 @@ const translations = {
     'login.no_account': '还没有账号？',
     'login.register': '立即注册',
 
+    // Register
+    'register.title': '创建新账号',
+    'register.subtitle': '开启您的智能量化交易之旅',
+    'register.name': '用户名',
+    'register.email': '邮箱地址',
+    'register.password': '设置密码',
+    'register.confirm_password': '确认密码',
+    'register.btn': '注册账号',
+    'register.has_account': '已有账号？',
+    'register.login': '立即登录',
+    'register.success': '注册成功！正在跳转...',
+
+    // Forgot Password
+    'forgot.title': '重置密码',
+    'forgot.subtitle': '请输入您的注册邮箱，我们将发送验证码。',
+    'forgot.step1.btn': '发送验证码',
+    'forgot.step2.title': '验证与重置',
+    'forgot.step2.subtitle': '请输入验证码并设置新密码。',
+    'forgot.code': '验证码',
+    'forgot.new_password': '新密码',
+    'forgot.confirm_new': '确认新密码',
+    'forgot.reset_btn': '重置密码',
+    'forgot.back': '返回登录',
+    'forgot.resend': '重新发送',
+    'forgot.sent': '验证码已发送至',
+    'forgot.success': '密码重置成功！',
+
     // Profile
     'profile.title': '个人资料',
     'profile.role': '高级量化分析师',
@@ -263,6 +290,33 @@ const translations = {
     'login.forgot': 'Forgot password?',
     'login.no_account': 'No account?',
     'login.register': 'Register',
+
+    // Register
+    'register.title': 'Create Account',
+    'register.subtitle': 'Start your quantitative trading journey.',
+    'register.name': 'Username',
+    'register.email': 'Email Address',
+    'register.password': 'Password',
+    'register.confirm_password': 'Confirm Password',
+    'register.btn': 'Create Account',
+    'register.has_account': 'Already have an account?',
+    'register.login': 'Sign in',
+    'register.success': 'Registration successful! Redirecting...',
+
+    // Forgot Password
+    'forgot.title': 'Reset Password',
+    'forgot.subtitle': 'Enter your email to receive a verification code.',
+    'forgot.step1.btn': 'Send Verification Code',
+    'forgot.step2.title': 'Verify & Reset',
+    'forgot.step2.subtitle': 'Enter the code and set your new password.',
+    'forgot.code': 'Verification Code',
+    'forgot.new_password': 'New Password',
+    'forgot.confirm_new': 'Confirm New Password',
+    'forgot.reset_btn': 'Reset Password',
+    'forgot.back': 'Back to Login',
+    'forgot.resend': 'Resend Code',
+    'forgot.sent': 'Code sent to',
+    'forgot.success': 'Password reset successful!',
 
     // Profile
     'profile.title': 'Profile',

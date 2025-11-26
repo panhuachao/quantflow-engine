@@ -60,7 +60,12 @@ export const LoginPage: React.FC = () => {
           <div>
              <div className="flex justify-between items-center mb-1.5 ml-1">
                <label className="block text-xs text-slate-400">{t('login.password')}</label>
-               <a href="#" className="text-xs text-cyan-400 hover:text-cyan-300">{t('login.forgot')}</a>
+               <span 
+                 onClick={() => navigate('/forgot-password')}
+                 className="text-xs text-cyan-400 hover:text-cyan-300 cursor-pointer"
+               >
+                 {t('login.forgot')}
+               </span>
              </div>
              <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
@@ -85,7 +90,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         <div className="mt-6 text-center text-xs text-slate-500">
-           {t('login.no_account')} <a href="#" className="text-cyan-400 font-medium hover:text-cyan-300 ml-1">{t('login.register')}</a>
+           {t('login.no_account')} <span onClick={() => navigate('/register')} className="text-cyan-400 font-medium hover:text-cyan-300 ml-1 cursor-pointer">{t('login.register')}</span>
         </div>
       </div>
       

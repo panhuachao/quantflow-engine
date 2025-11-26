@@ -12,6 +12,8 @@ import { BacktestDetail } from './components/BacktestDetail';
 import { MarketAnalysis } from './components/MarketAnalysis';
 import { DataSourceList } from './components/DataSourceList';
 import { LoginPage } from './components/LoginPage';
+import { RegisterPage } from './components/RegisterPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ProfilePage } from './components/ProfilePage';
 import { SettingsPage } from './components/SettingsPage';
 import { workflowService } from './services/workflowService';
@@ -334,6 +336,8 @@ export default function App() {
       <Routes>
         {/* Public Route */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Protected Routes */}
         <Route path="/" element={<Layout />}>
