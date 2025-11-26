@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { NodeData, NodeType } from '../../types';
 import { NODE_ICONS_COLOR } from '../../constants';
@@ -217,13 +216,31 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose,
           <div className="space-y-4 border-t border-slate-800 pt-4">
             <div className="flex items-center gap-2 text-pink-400">
               <Code size={16} />
-              <span className="text-sm font-semibold">JavaScript Processor</span>
+              <span className="text-sm font-semibold">Code Execution</span>
             </div>
+            
             <div>
-              <label className="block text-xs text-slate-400 mb-2">Processing Logic</label>
+              <label className="block text-xs text-slate-400 mb-2">Language</label>
+              <select 
+                className="w-full bg-slate-800 border border-slate-700 rounded-md p-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-pink-500"
+                value={node.config.language || 'javascript'}
+                onChange={(e) => onUpdate('config.language', e.target.value)}
+              >
+                <option value="javascript">JavaScript (Node.js)</option>
+                <option value="python">Python 3.10</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">
+                Code Logic <span className="text-slate-500">(Input data available as `inputs`)</span>
+              </label>
               <textarea 
                 className="w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-xs font-mono text-pink-300 focus:ring-2 focus:ring-pink-500 outline-none h-48 resize-none"
-                placeholder="// Access input data via `data` variable&#10;return data.filter(item => item.close > 0);"
+                placeholder={node.config.language === 'python' 
+                  ? "# Access input data via `inputs` list\ndef main(inputs):\n    return [d for d in inputs if d['volume'] > 1000]"
+                  : "// Access input data via `inputs` array\nreturn inputs.filter(item => item.volume > 1000);"
+                }
                 value={node.config.code || ''}
                 onChange={(e) => onUpdate('config.code', e.target.value)}
               />

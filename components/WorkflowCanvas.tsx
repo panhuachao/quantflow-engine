@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType, Workflow } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from '../constants';
@@ -286,35 +284,56 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
             // Logic based on Type
             let outputMsg = "";
             let level: LogEntry['level'] = 'success';
+            let outputData: any = {};
             
-            const inputs = connections.filter(c => c.targetId === node.id).map(c => dataContext.get(c.sourceId));
+            // --- DATA FLOW: Collect inputs from previous nodes ---
+            const inputs = connections
+                .filter(c => c.targetId === node.id)
+                .map(c => dataContext.get(c.sourceId))
+                .filter(d => d !== undefined);
 
             if (node.type === NodeType.DATA_COLLECT) {
                 const count = Math.floor(Math.random() * 5000) + 500;
-                dataContext.set(node.id, { count, type: 'market_data' });
+                outputData = { count, type: 'market_data', source: node.config.source };
                 outputMsg = `Fetched ${count} candles for ${node.config.symbol || 'Unknown'}.`;
-            } else if (node.type === NodeType.SCRIPT) {
-                const inputCount = inputs[0]?.count || 0;
-                const filtered = Math.floor(inputCount * 0.8);
-                dataContext.set(node.id, { count: filtered, type: 'clean_data' });
-                outputMsg = `Processed ${inputCount} records. Filtered down to ${filtered}.`;
-            } else if (node.type === NodeType.STRATEGY) {
+            } 
+            else if (node.type === NodeType.SCRIPT) {
+                // Code Node Logic
+                const lang = node.config.language || 'javascript';
+                const inputCount = inputs.length > 0 ? inputs.length : 0;
+                
+                outputData = { ...inputs[0], processed: true, language: lang };
+                outputMsg = `Executed ${lang === 'python' ? 'Python' : 'JavaScript'} code. Received ${inputCount} input(s). passed data forward.`;
+            } 
+            else if (node.type === NodeType.STRATEGY) {
                  const signals = ['BUY', 'SELL', 'HOLD'];
                  const signal = signals[Math.floor(Math.random() * signals.length)];
-                 dataContext.set(node.id, { signal });
+                 outputData = { signal, ...inputs[0] };
                  outputMsg = `Strategy Analysis Complete. Generated Signal: ${signal}`;
                  if (signal === 'HOLD') level = 'warn';
-            } else if (node.type === NodeType.STORAGE) {
-                 outputMsg = `Persisted results to ${node.config.dbType || 'Database'}.`;
-            } else if (node.type === NodeType.TIMER) {
+            } 
+            else if (node.type === NodeType.STORAGE) {
+                 outputMsg = `Persisted results to ${node.config.dbType || 'Database'}. Data saved: ${JSON.stringify(inputs[0] || {})}`;
+            } 
+            else if (node.type === NodeType.TIMER) {
+                 outputData = { timestamp: Date.now() };
                  outputMsg = `Trigger fired at ${new Date().toLocaleTimeString()}.`;
-            } else if (node.type === NodeType.DATABASE_QUERY) {
+            } 
+            else if (node.type === NodeType.DATABASE_QUERY) {
+                 outputData = { rows: 124, source: 'sql' };
                  outputMsg = `Executed SQL query. Fetched 124 rows.`;
-            } else if (node.type === NodeType.HTTP_REQUEST) {
+            } 
+            else if (node.type === NodeType.HTTP_REQUEST) {
+                 outputData = { status: 200, body: 'OK' };
                  outputMsg = `Sent ${node.config.method || 'GET'} request to ${node.config.url || '...'}. Status: 200 OK`;
-            } else {
-                 outputMsg = `Execution complete.`;
+            } 
+            else {
+                 outputData = { ...inputs[0] };
+                 outputMsg = `Execution complete. Passed data forward.`;
             }
+
+            // Store output for next nodes
+            dataContext.set(node.id, outputData);
 
             addLog(outputMsg, level, node.id);
             setNodes(prev => prev.map(n => n.id === node.id ? { ...n, status: 'success' } : n));
@@ -329,7 +348,8 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
     setIsRunning(false);
   };
 
-  const draggableNodeTypes = [NodeType.TIMER, NodeType.DATA_COLLECT, NodeType.DATABASE_QUERY, NodeType.HTTP_REQUEST, NodeType.SCRIPT, NodeType.STRATEGY, NodeType.STORAGE, NodeType.EXECUTION];
+  // Removed DATA_COLLECT from palette as requested ("delete current download node")
+  const draggableNodeTypes = [NodeType.TIMER, NodeType.DATABASE_QUERY, NodeType.HTTP_REQUEST, NodeType.SCRIPT, NodeType.STRATEGY, NodeType.STORAGE, NodeType.EXECUTION];
   const getCursor = () => isPanning ? 'grabbing' : isSpacePressed ? 'grab' : isBoxSelecting ? 'crosshair' : 'default';
 
   return (
@@ -368,7 +388,13 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
                 if (!rect) return;
                 const x = (e.clientX - rect.left - pan.x) / zoom - 100;
                 const y = (e.clientY - rect.top - pan.y) / zoom - 40;
-                setNodes([...nodes, { id: Date.now().toString(), type, label: type === NodeType.TIMER ? 'Cron Timer' : type === NodeType.DATABASE_QUERY ? 'DB Query' : type === NodeType.HTTP_REQUEST ? 'HTTP Request' : `New ${type}`, x, y, config: {}, status: 'idle' }]);
+                // Default label for SCRIPT is now 'Code Node'
+                const label = type === NodeType.TIMER ? 'Cron Timer' : 
+                              type === NodeType.DATABASE_QUERY ? 'DB Query' : 
+                              type === NodeType.HTTP_REQUEST ? 'HTTP Request' : 
+                              type === NodeType.SCRIPT ? 'Code Node' :
+                              `New ${type}`;
+                setNodes([...nodes, { id: Date.now().toString(), type, label, x, y, config: {}, status: 'idle' }]);
               }}
              >
                 <NodePaletteIcon type={type} />

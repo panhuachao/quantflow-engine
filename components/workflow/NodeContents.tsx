@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { NodeType } from '../../types';
 
@@ -34,6 +33,12 @@ export const StorageContent = ({ config }: { config: any }) => (
 
 export const ScriptContent = ({ config }: { config: any }) => (
   <div className="mt-2 pt-2 border-t border-slate-700/50">
+    <div className="flex justify-between items-center mb-1">
+       <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Code</span>
+       <span className={`text-[9px] px-1.5 rounded font-bold ${config.language === 'python' ? 'bg-blue-900/50 text-blue-400' : 'bg-yellow-900/50 text-yellow-400'}`}>
+          {config.language === 'python' ? 'PY' : 'JS'}
+       </span>
+    </div>
     <div className="text-[10px] text-pink-400 font-mono bg-slate-900/50 p-1 rounded truncate opacity-80">
       {config.code ? (config.code.length > 25 ? config.code.substring(0, 25) + '...' : config.code) : '// No code'}
     </div>
