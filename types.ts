@@ -1,16 +1,17 @@
+import React from 'react';
 
 export enum NodeType {
   SOURCE = 'SOURCE',
-  DATA_COLLECT = 'DATA_COLLECT', // New: AkShare/Tushare
+  DATA_COLLECT = 'DATA_COLLECT', // Kept for backward compat or generic data
   TRANSFORM = 'TRANSFORM',
-  SCRIPT = 'SCRIPT',             // New: JS Processing
+  SCRIPT = 'SCRIPT',             // Code Node
   STRATEGY = 'STRATEGY',
   FILTER = 'FILTER',
   EXECUTION = 'EXECUTION',
-  STORAGE = 'STORAGE',            // New: DB Storage
-  TIMER = 'TIMER',                 // New: Cron Timer
-  DATABASE_QUERY = 'DATABASE_QUERY', // New: SQL Query
-  HTTP_REQUEST = 'HTTP_REQUEST'      // New: REST/Webhook
+  STORAGE = 'STORAGE',            
+  TIMER = 'TIMER',                 
+  DATABASE_QUERY = 'DATABASE_QUERY', 
+  HTTP_REQUEST = 'HTTP_REQUEST'      
 }
 
 export interface NodeData {
@@ -40,29 +41,25 @@ export enum AppView {
   WORKFLOW = 'WORKFLOW',
   MARKET = 'MARKET',
   STRATEGIES = 'STRATEGIES',
-  BACKTESTS = 'BACKTESTS', // New View
+  BACKTESTS = 'BACKTESTS', 
 }
 
 export interface StrategyConfig {
   symbol: string;
   interval: string;
-  parameters: string; // Python/Pseudo code
+  parameters: string; 
 }
-
-// --- Strategy Module Types ---
 
 export interface StrategyItem {
   id: string;
   name: string;
   description: string;
-  code: string; // Python code
+  code: string; 
   language: 'python';
   framework: 'backtrader';
   updatedAt: string;
   tags: string[];
 }
-
-// --- Backtest Module Types ---
 
 export interface BacktestReport {
   id: string;
@@ -81,10 +78,8 @@ export interface BacktestReport {
   winRate: number;
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
-  reportHtml?: string; // HTML content for the iframe
+  reportHtml?: string; 
 }
-
-// --- Dashboard Extensions ---
 
 export enum DataSourceType {
   SQLITE = 'SQLite',
@@ -105,11 +100,11 @@ export interface DataSource {
 }
 
 export enum WidgetType {
-  STAT = 'STAT',       // Numeric indicator
-  LINE = 'LINE',       // Line chart
-  BAR = 'BAR',         // Bar chart
-  PIE = 'PIE',         // Pie chart
-  CANDLE = 'CANDLE'    // K-Line chart
+  STAT = 'STAT',       
+  LINE = 'LINE',       
+  BAR = 'BAR',         
+  PIE = 'PIE',         
+  CANDLE = 'CANDLE'    
 }
 
 export interface DashboardWidget {
@@ -117,12 +112,10 @@ export interface DashboardWidget {
   title: string;
   type: WidgetType;
   dataSourceId?: string;
-  script?: string;     // SQL or JS to fetch data
-  colSpan: number;     // Grid width (1-4)
-  config?: any;        // Specific chart config (colors, etc)
+  script?: string;     
+  colSpan: number;     
+  config?: any;        
 }
-
-// --- List View Metadata ---
 
 export interface WorkflowMeta {
   id: string;
@@ -133,15 +126,14 @@ export interface WorkflowMeta {
   nodesCount: number;
 }
 
-// Updated Workflow Interface
 export interface Workflow {
   id: string;
   name: string;
   description: string;
   status: 'active' | 'draft' | 'archived';
   updatedAt: string;
-  nodes: NodeData[];       // Added
-  connections: Connection[]; // Added
+  nodes: NodeData[];       
+  connections: Connection[]; 
 }
 
 export interface DashboardMeta {
@@ -151,4 +143,40 @@ export interface DashboardMeta {
   widgetCount: number;
   updatedAt: string;
   thumbnailColor: string;
+}
+
+// --- New Modular Architecture Types ---
+
+export interface ExecutionContext {
+  nodeId: string;
+  inputs: any[]; // Data from previous nodes
+  config: Record<string, any>;
+  log: (message: string, level?: 'info' | 'success' | 'warn' | 'error') => void;
+}
+
+export interface ExecutionResult {
+  output: any; // Data to pass to next nodes
+  status: 'success' | 'error';
+}
+
+export interface NodeDefinition {
+  type: NodeType;
+  label: string; // Default label
+  icon: React.ElementType;
+  color: string; // Tailwind border color class
+  iconColor: string; // Tailwind text color class
+  description: string;
+  
+  // UI Components
+  ConfigComponent: React.FC<{ 
+    config: any; 
+    onUpdate: (key: string, value: any) => void 
+  }>;
+  
+  PreviewComponent: React.FC<{ 
+    config: any 
+  }>;
+
+  // Logic
+  execute: (ctx: ExecutionContext) => Promise<ExecutionResult>;
 }
