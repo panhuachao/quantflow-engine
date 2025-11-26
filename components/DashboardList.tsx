@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardMeta } from '../types';
 import { Button } from './ui/Button';
+import { Pagination } from './ui/Pagination';
 import { Plus, LayoutGrid, BarChart3, Clock, MoreVertical, ExternalLink, Loader2 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -13,6 +14,11 @@ interface DashboardListProps {
 export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate }) => {
   const [dashboards, setDashboards] = useState<DashboardMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -24,13 +30,18 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
     load();
   }, []);
 
+  // Pagination Logic (No filtering yet for Dashboards, but could be added)
+  const indexOfLastItem = currentPage * pageSize;
+  const indexOfFirstItem = indexOfLastItem - pageSize;
+  const currentDashboards = dashboards.slice(indexOfFirstItem, indexOfLastItem);
+
   if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-cyan-500"/></div>;
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-950">
-       <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-8 h-full flex flex-col bg-slate-950">
+       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col space-y-8">
          
-         <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between shrink-0">
             <div>
                <h2 className="text-3xl font-bold text-slate-100">{t('dashboard.title')}</h2>
                <p className="text-slate-400 mt-1">{t('dashboard.desc')}</p>
@@ -40,8 +51,26 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
             </Button>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dashboards.map((dash) => (
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 content-start overflow-y-auto">
+            {/* Create New Card Always Visible or First? Let's keep it first in list or separate. 
+                Common UX is to have it as the first item of the list, 
+                but for pagination, usually it's a separate action or part of the first page.
+                Here, let's include it in the grid but strictly it's not "paginated" data. 
+                Let's keep it separate or just insert it into the view if on page 1.
+            */}
+            {currentPage === 1 && (
+                <div 
+                onClick={onCreate}
+                className="border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:border-cyan-500/50 hover:text-cyan-500 hover:bg-slate-900/50 transition-all cursor-pointer min-h-[280px]"
+                >
+                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-4 group-hover:bg-cyan-500/10">
+                    <Plus size={24} />
+                </div>
+                <span className="font-semibold">{t('dashboard.create_card')}</span>
+                </div>
+            )}
+
+            {currentDashboards.map((dash) => (
                <div 
                  key={dash.id}
                  className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col"
@@ -74,19 +103,15 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
                  </div>
                </div>
             ))}
-            
-            {/* Create New Card */}
-            <div 
-              onClick={onCreate}
-              className="border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:border-cyan-500/50 hover:text-cyan-500 hover:bg-slate-900/50 transition-all cursor-pointer min-h-[280px]"
-            >
-               <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-4 group-hover:bg-cyan-500/10">
-                  <Plus size={24} />
-               </div>
-               <span className="font-semibold">{t('dashboard.create_card')}</span>
-            </div>
          </div>
 
+         <Pagination 
+            currentPage={currentPage}
+            totalItems={dashboards.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+        />
        </div>
     </div>
   );

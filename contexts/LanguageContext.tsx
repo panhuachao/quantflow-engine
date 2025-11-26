@@ -91,6 +91,15 @@ const translations = {
     'settings.language': '系统语言',
     'settings.save': '保存设置',
 
+    // Pagination
+    'pagination.prev': '上一页',
+    'pagination.next': '下一页',
+    'pagination.showing': '显示',
+    'pagination.to': '至',
+    'pagination.of': '共',
+    'pagination.results': '条结果',
+    'pagination.per_page': '条/页',
+
     // Workflow List
     'workflow.title': '策略与工作流',
     'workflow.desc': '管理和部署您的量化交易逻辑。',
@@ -338,6 +347,15 @@ const translations = {
     'settings.theme.cosmic': 'Cosmic Purple',
     'settings.language': 'Language',
     'settings.save': 'Save Settings',
+
+    // Pagination
+    'pagination.prev': 'Previous',
+    'pagination.next': 'Next',
+    'pagination.showing': 'Showing',
+    'pagination.to': 'to',
+    'pagination.of': 'of',
+    'pagination.results': 'results',
+    'pagination.per_page': 'per page',
 
     // Workflow List
     'workflow.title': 'Strategies & Workflows',

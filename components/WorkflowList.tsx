@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { WorkflowMeta } from '../types';
 import { Button } from './ui/Button';
+import { Pagination } from './ui/Pagination';
 import { Plus, Search, MoreHorizontal, Edit, Clock, GitBranch, Activity, Loader2 } from 'lucide-react';
 import { workflowService } from '../services/workflowService';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -13,6 +14,12 @@ interface WorkflowListProps {
 export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }) => {
   const [workflows, setWorkflows] = useState<WorkflowMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -27,6 +34,17 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
     fetchWorkflows();
   }, []);
 
+  // Filter Logic
+  const filteredWorkflows = workflows.filter(w => 
+      w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      w.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * pageSize;
+  const indexOfFirstItem = indexOfLastItem - pageSize;
+  const currentWorkflows = filteredWorkflows.slice(indexOfFirstItem, indexOfLastItem);
+
   if (loading) {
       return (
           <div className="h-full flex items-center justify-center bg-slate-950">
@@ -36,10 +54,10 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
   }
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-950">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-8 h-full flex flex-col bg-slate-950">
+      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col space-y-8">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">{t('workflow.title')}</h2>
             <p className="text-slate-400 mt-1">{t('workflow.desc')}</p>
@@ -50,6 +68,8 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                <input 
                  type="text" 
                  placeholder={t('workflow.search')}
+                 value={searchTerm}
+                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                  className="bg-slate-900/50 border border-slate-700 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 text-slate-200"
                />
             </div>
@@ -59,69 +79,81 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {workflows.map((workflow) => (
-            <div 
-              key={workflow.id} 
-              className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
-              onClick={() => onSelect(workflow)}
-            >
-              <div className="flex items-start gap-4 flex-1">
-                <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    workflow.status === 'active' ? 'bg-green-500/10 text-green-400' :
-                    workflow.status === 'draft' ? 'bg-slate-700/50 text-slate-400' :
-                    'bg-slate-800 text-slate-600'
-                }`}>
-                   <GitBranch size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors">{workflow.name}</h3>
-                    <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full border ${
-                       workflow.status === 'active' ? 'border-green-500/30 bg-green-500/10 text-green-400' :
-                       workflow.status === 'draft' ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400' :
-                       'border-slate-600 bg-slate-700 text-slate-400'
-                    }`}>
-                      {workflow.status === 'active' ? t('workflow.status.active') : t('workflow.status.draft')}
-                    </span>
+        <div className="grid grid-cols-1 gap-4 flex-1 overflow-y-auto content-start">
+          {currentWorkflows.length === 0 ? (
+             <div className="text-center py-20 text-slate-500">No workflows found.</div>
+          ) : (
+            currentWorkflows.map((workflow) => (
+              <div 
+                key={workflow.id} 
+                className="group bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
+                onClick={() => onSelect(workflow)}
+              >
+                <div className="flex items-start gap-4 flex-1">
+                  <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      workflow.status === 'active' ? 'bg-green-500/10 text-green-400' :
+                      workflow.status === 'draft' ? 'bg-slate-700/50 text-slate-400' :
+                      'bg-slate-800 text-slate-600'
+                  }`}>
+                    <GitBranch size={20} />
                   </div>
-                  <p className="text-slate-500 text-sm line-clamp-1">{workflow.description}</p>
-                  
-                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                       <Clock size={12} />
-                       {t('workflow.updated')} {workflow.updatedAt}
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors">{workflow.name}</h3>
+                      <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full border ${
+                        workflow.status === 'active' ? 'border-green-500/30 bg-green-500/10 text-green-400' :
+                        workflow.status === 'draft' ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400' :
+                        'border-slate-600 bg-slate-700 text-slate-400'
+                      }`}>
+                        {workflow.status === 'active' ? t('workflow.status.active') : t('workflow.status.draft')}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                       <Activity size={12} />
-                       {workflow.nodesCount} {t('workflow.nodes')}
+                    <p className="text-slate-500 text-sm line-clamp-1">{workflow.description}</p>
+                    
+                    <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={12} />
+                        {t('workflow.updated')} {workflow.updatedAt}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Activity size={12} />
+                        {workflow.nodesCount} {t('workflow.nodes')}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 self-end md:self-center">
-                 <Button 
-                   variant="secondary" 
-                   size="sm" 
-                   className="opacity-0 group-hover:opacity-100 transition-opacity"
-                   onClick={(e) => { e.stopPropagation(); onSelect(workflow); }}
-                 >
-                   <Edit size={14} className="mr-2" />
-                   {t('workflow.btn.configure')}
-                 </Button>
-                 <Button 
-                   variant="ghost" 
-                   size="sm"
-                   className="text-slate-400 hover:text-white"
-                   onClick={(e) => e.stopPropagation()}
-                 >
-                   <MoreHorizontal size={18} />
-                 </Button>
+                <div className="flex items-center gap-2 self-end md:self-center">
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); onSelect(workflow); }}
+                  >
+                    <Edit size={14} className="mr-2" />
+                    {t('workflow.btn.configure')}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-slate-400 hover:text-white"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal size={18} />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
+
+        <Pagination 
+            currentPage={currentPage}
+            totalItems={filteredWorkflows.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   );
