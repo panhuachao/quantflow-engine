@@ -146,8 +146,16 @@ export const INITIAL_DASHBOARD_WIDGETS = [
     title: 'Monthly Returns',
     type: WidgetType.BAR,
     dataSourceId: 'ds1',
-    colSpan: 2,
+    colSpan: 1,
     script: 'SELECT month, return_pct FROM monthly_stats'
+  },
+  {
+    id: 'w9',
+    title: 'Recommended Buys (Today)',
+    type: WidgetType.TABLE,
+    colSpan: 1,
+    script: 'SELECT symbol, price, signal FROM signals WHERE date = CURDATE()',
+    config: {}
   }
 ];
 

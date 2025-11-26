@@ -7,7 +7,8 @@ import {
 } from 'recharts';
 import { 
   Settings, Plus, Trash2, Edit2, Database, Save, 
-  LayoutGrid, Activity, DollarSign, TrendingUp, BarChart3, PieChart as PieIcon
+  LayoutGrid, Activity, DollarSign, TrendingUp, BarChart3, PieChart as PieIcon,
+  Table as TableIcon
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { DataSource, DashboardWidget, WidgetType, DataSourceType } from '../types';
@@ -56,6 +57,14 @@ const generateCandleData = (count = 20) => {
     };
   });
 };
+
+const generateTableData = (count = 5) => Array.from({ length: count }, (_, i) => ({
+  symbol: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'][i % 5],
+  signal: ['BUY', 'SELL', 'HOLD', 'BUY', 'STRONG BUY'][i % 5],
+  price: (100 + Math.random() * 200).toFixed(2),
+  change: (Math.random() * 5 * (Math.random() > 0.5 ? 1 : -1)).toFixed(2) + '%',
+  volume: Math.floor(Math.random() * 1000000).toLocaleString()
+}));
 
 // --- SUB-COMPONENTS ---
 
@@ -325,9 +334,6 @@ export const Dashboard: React.FC = () => {
                       return [];
                    }}
                 />
-                {/* Wicks (High-Low) simulated with ErrorBar or custom shape is complex, using generic bar for visual */}
-                {/* Simplified Candle Logic: Bar is body. We can use ComposedChart for Wicks if needed. */}
-                {/* Since standard Recharts Candle is verbose, we simulate with a Bar representing Body */}
                 <Bar dataKey="bodyTop" stackId="a" fill="transparent" />
                 <Bar dataKey="bodyTop" stackId="a" fill="#10b981">
                     {
@@ -336,10 +342,37 @@ export const Dashboard: React.FC = () => {
                       ))
                     }
                 </Bar>
-                {/* This is a visual approximation for the mockup */}
              </BarChart>
           </ResponsiveContainer>
          );
+      case WidgetType.TABLE:
+          const tableData = generateTableData();
+          return (
+            <div className="overflow-auto h-full w-full custom-scrollbar">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900/50 sticky top-0 font-bold text-slate-400 backdrop-blur">
+                   <tr>
+                     {Object.keys(tableData[0]).map(key => <th key={key} className="p-2 capitalize border-b border-slate-700/50">{key}</th>)}
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {tableData.map((row, idx) => (
+                     <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                        {Object.values(row).map((val, i) => (
+                          <td key={i} className="p-2 truncate max-w-[100px]" title={String(val)}>
+                             {i === 1 ? (
+                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${val === 'BUY' || val === 'STRONG BUY' ? 'bg-green-900/30 text-green-400' : val === 'SELL' ? 'bg-red-900/30 text-red-400' : 'bg-slate-700 text-slate-400'}`}>
+                                 {val}
+                               </span>
+                             ) : val}
+                          </td>
+                        ))}
+                     </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
       default:
         return <div className="flex items-center justify-center h-full text-slate-600">No Visualization</div>;
     }
@@ -388,7 +421,7 @@ export const Dashboard: React.FC = () => {
             <div 
               key={widget.id} 
               className={`
-                relative group rounded-xl border transition-all duration-200
+                relative group rounded-xl border transition-all duration-200 overflow-hidden
                 ${widget.type === WidgetType.STAT ? 'row-span-1' : 'row-span-2'}
                 ${widget.colSpan === 1 ? 'col-span-1' : ''}
                 ${widget.colSpan === 2 ? 'col-span-1 md:col-span-2' : ''}
@@ -416,13 +449,13 @@ export const Dashboard: React.FC = () => {
 
               <div className="h-full p-5 flex flex-col">
                 {widget.type !== WidgetType.STAT && (
-                   <h3 className="text-sm font-medium text-slate-400 mb-4 flex justify-between items-center">
+                   <h3 className="text-sm font-medium text-slate-400 mb-4 flex justify-between items-center shrink-0">
                      {widget.title}
                      {widget.dataSourceId && <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-500">SQL</span>}
                    </h3>
                 )}
                 
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 relative">
                   {widget.type === WidgetType.STAT ? (
                     <StatCard widget={widget} />
                   ) : renderChart(widget)}

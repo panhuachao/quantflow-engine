@@ -104,7 +104,8 @@ export enum WidgetType {
   LINE = 'LINE',       
   BAR = 'BAR',         
   PIE = 'PIE',         
-  CANDLE = 'CANDLE'    
+  CANDLE = 'CANDLE',
+  TABLE = 'TABLE'
 }
 
 export interface DashboardWidget {
