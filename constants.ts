@@ -1,49 +1,42 @@
 import { NodeType, WidgetType, DataSourceType, Workflow, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
-// Standalone defaults (kept for fallback)
+// Standalone defaults (Scenario 1: Daily Data Sync)
 export const INITIAL_NODES = [
   {
     id: '1',
-    type: NodeType.DATA_COLLECT,
-    label: 'AkShare Stock Data',
+    type: NodeType.TIMER,
+    label: 'Daily 20:00',
     x: 100,
-    y: 100,
-    config: { source: 'AkShare', symbol: '600519', interval: 'daily' },
-    status: 'success'
+    y: 200,
+    config: { cron: '0 20 * * 1-5' },
+    status: 'idle'
   },
   {
     id: '2',
     type: NodeType.SCRIPT,
-    label: 'Clean Data (JS)',
+    label: 'Fetch AkShare Data',
     x: 400,
-    y: 100,
-    config: { code: 'return data.filter(d => d.volume > 0);' },
-    status: 'success'
+    y: 200,
+    config: { 
+      language: 'python', 
+      code: `import akshare as ak\n\ndef main(args):\n    # Fetch daily spot data for A-shares\n    df = ak.stock_zh_a_spot_em()\n    return df.to_dict('records')` 
+    },
+    status: 'idle'
   },
   {
     id: '3',
-    type: NodeType.LLM,
-    label: 'Market Analysis AI',
-    x: 700,
-    y: 100,
-    config: { provider: 'DeepSeek', model: 'deepseek-chat', userPrompt: 'Analyze the trend based on this data.' },
-    status: 'running'
-  },
-  {
-    id: '4',
     type: NodeType.STORAGE,
-    label: 'Save to SQLite',
-    x: 1000,
-    y: 100,
-    config: { dbType: 'SQLite', table: 'strategy_results' },
+    label: 'Save to MySQL',
+    x: 700,
+    y: 200,
+    config: { dbType: 'MySQL', table: 'stock_daily_quotes' },
     status: 'idle'
   }
 ];
 
 export const INITIAL_CONNECTIONS = [
   { id: 'c1', sourceId: '1', targetId: '2' },
-  { id: 'c2', sourceId: '2', targetId: '3' },
-  { id: 'c3', sourceId: '3', targetId: '4' }
+  { id: 'c2', sourceId: '2', targetId: '3' }
 ];
 
 export const NODE_COLORS = {
@@ -79,9 +72,9 @@ export const NODE_ICONS_COLOR = {
 export const INITIAL_DATA_SOURCES = [
   { 
     id: 'ds1', 
-    name: 'Main Strategy DB', 
-    type: DataSourceType.SQLITE, 
-    config: { filePath: './strategies.db' } 
+    name: 'Strategy DB (MySQL)', 
+    type: DataSourceType.MYSQL, 
+    config: { connectionString: 'mysql://user:pass@localhost:3306/quant_db' } 
   },
   { 
     id: 'ds2', 
@@ -158,19 +151,36 @@ export const INITIAL_DASHBOARD_WIDGETS = [
   }
 ];
 
-// --- Mock Lists ---
+// --- Mock Workflows (Scenarios) ---
 
 export const MOCK_WORKFLOWS_LIST: Workflow[] = [
   { 
-    id: 'wf-1', 
-    name: 'Moving Average Crossover', 
-    description: 'Classic trend following strategy using SMA 10/50 on Daily candles.', 
+    id: 'wf-daily-sync', 
+    name: 'Daily Data Sync (AkShare)', 
+    description: 'Scheduled 20:00 task to fetch daily stock spots via AkShare and save to MySQL.', 
     status: 'active', 
-    updatedAt: '2023-10-15 14:30',
+    updatedAt: '2023-10-25 19:30',
     nodes: [
-        { id: '1', type: NodeType.DATA_COLLECT, label: 'AkShare: SPY', x: 100, y: 150, config: { source: 'AkShare', symbol: 'SPY' } },
-        { id: '2', type: NodeType.LLM, label: 'AI Signal Gen', x: 450, y: 150, config: { provider: 'DeepSeek', model: 'deepseek-chat', userPrompt: 'Given the SMA data...' } },
-        { id: '3', type: NodeType.EXECUTION, label: 'Paper Trading', x: 800, y: 150, config: {} }
+        { id: '1', type: NodeType.TIMER, label: 'Daily 20:00', x: 100, y: 150, config: { cron: '0 20 * * 1-5' } },
+        { 
+          id: '2', 
+          type: NodeType.SCRIPT, 
+          label: 'Fetch AkShare', 
+          x: 400, 
+          y: 150, 
+          config: { 
+            language: 'python', 
+            code: `import akshare as ak\n\ndef main(args):\n    # Download A-share spot data\n    df = ak.stock_zh_a_spot_em()\n    print(f"Fetched {len(df)} records")\n    return df.to_dict('records')` 
+          } 
+        },
+        { 
+          id: '3', 
+          type: NodeType.STORAGE, 
+          label: 'Save to MySQL', 
+          x: 700, 
+          y: 150, 
+          config: { dbType: 'MySQL', table: 'stock_daily_spot' } 
+        }
     ],
     connections: [
         { id: 'c1', sourceId: '1', targetId: '2' },
@@ -178,49 +188,84 @@ export const MOCK_WORKFLOWS_LIST: Workflow[] = [
     ]
   },
   { 
-    id: 'wf-2', 
-    name: 'Grid Trading BTC/USDT', 
-    description: 'High frequency grid bot for sideways market volatility harvesting.', 
-    status: 'draft', 
-    updatedAt: '2023-10-16 09:15',
+    id: 'wf-morning-alert', 
+    name: 'Morning Strategy & Alert', 
+    description: 'Runs at 08:00. Analyzes previous day data, generates signals, saves results, and pushes to DingTalk.', 
+    status: 'active', 
+    updatedAt: '2023-10-26 07:45',
     nodes: [
-        { id: '1', type: NodeType.TIMER, label: 'Every 5m', x: 50, y: 50, config: { cron: '*/5 * * * *' } },
-        { id: '2', type: NodeType.DATA_COLLECT, label: 'Binance: BTC', x: 300, y: 50, config: { source: 'Binance', symbol: 'BTCUSDT' } },
-        { id: '3', type: NodeType.SCRIPT, label: 'Calc Grid', x: 300, y: 250, config: { code: '// Grid logic...' } },
-        { id: '4', type: NodeType.EXECUTION, label: 'Limit Orders', x: 600, y: 250, config: {} }
+        { id: '1', type: NodeType.TIMER, label: 'Daily 08:00', x: 50, y: 200, config: { cron: '0 8 * * 1-5' } },
+        { 
+          id: '2', 
+          type: NodeType.DATABASE_QUERY, 
+          label: 'Get History', 
+          x: 300, 
+          y: 200, 
+          config: { 
+            connectionString: 'mysql://user:pass@localhost:3306/quant_db',
+            query: 'SELECT * FROM stock_daily_spot WHERE date = CURDATE() - INTERVAL 1 DAY' 
+          } 
+        },
+        { 
+          id: '3', 
+          type: NodeType.SCRIPT, 
+          label: 'Calc Signals', 
+          x: 550, 
+          y: 200, 
+          config: { 
+            language: 'python', 
+            code: `def main(records):\n    signals = []\n    for row in records:\n        if row['change_pct'] > 5.0 and row['volume'] > 100000:\n            signals.append({'symbol': row['symbol'], 'action': 'BUY'})\n    return signals` 
+          } 
+        },
+        { 
+          id: '4', 
+          type: NodeType.DATABASE_QUERY, 
+          label: 'Save Signals', 
+          x: 800, 
+          y: 100, 
+          config: { 
+             connectionString: 'mysql://user:pass@localhost:3306/quant_db',
+             query: 'INSERT INTO signal_log (symbol, action) VALUES (:symbol, :action)' 
+          } 
+        },
+        { 
+          id: '5', 
+          type: NodeType.HTTP_REQUEST, 
+          label: 'DingTalk Push', 
+          x: 800, 
+          y: 300, 
+          config: { 
+            method: 'POST',
+            url: 'https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN',
+            headers: '{"Content-Type": "application/json"}',
+            body: '{"msgtype": "text", "text": {"content": "Found {{inputs.length}} opportunities today."}}'
+          } 
+        }
+    ],
+    connections: [
+        { id: 'c1', sourceId: '1', targetId: '2' },
+        { id: 'c2', sourceId: '2', targetId: '3' },
+        { id: 'c3', sourceId: '3', targetId: '4' },
+        { id: 'c4', sourceId: '3', targetId: '5' }
+    ]
+  },
+  { 
+    id: 'wf-sentiment', 
+    name: 'AI Sentiment Analysis', 
+    description: 'Fetch news, analyze with LLM, and store sentiment score.', 
+    status: 'draft', 
+    updatedAt: '2023-10-14 11:20',
+    nodes: [
+        { id: '1', type: NodeType.TIMER, label: 'Hourly', x: 50, y: 150, config: { cron: '0 * * * *' } },
+        { id: '2', type: NodeType.HTTP_REQUEST, label: 'News API', x: 300, y: 150, config: { method: 'GET', url: 'https://api.news.com/finance' } },
+        { id: '3', type: NodeType.LLM, label: 'DeepSeek Analysis', x: 550, y: 150, config: { provider: 'DeepSeek', model: 'deepseek-chat', userPrompt: 'Analyze sentiment: {{inputs}}' } },
+        { id: '4', type: NodeType.STORAGE, label: 'Log Score', x: 800, y: 150, config: { dbType: 'PostgreSQL', table: 'sentiment_log' } }
     ],
     connections: [
         { id: 'c1', sourceId: '1', targetId: '2' },
         { id: 'c2', sourceId: '2', targetId: '3' },
         { id: 'c3', sourceId: '3', targetId: '4' }
     ]
-  },
-  { 
-    id: 'wf-3', 
-    name: 'Sentiment Analysis', 
-    description: 'Trade based on news sentiment scoring from NLP pipeline.', 
-    status: 'active', 
-    updatedAt: '2023-10-14 11:20',
-    nodes: [
-        { id: '1', type: NodeType.DATA_COLLECT, label: 'News Feed', x: 100, y: 100, config: { source: 'Yahoo', symbol: 'NEWS' } },
-        { id: '2', type: NodeType.SCRIPT, label: 'Pre-process', x: 400, y: 100, config: { code: 'return clean(data)' } },
-        { id: '3', type: NodeType.STORAGE, label: 'Log Sentiment', x: 400, y: 300, config: { dbType: 'Postgres' } },
-        { id: '4', type: NodeType.LLM, label: 'GPT Sentiment', x: 700, y: 100, config: { provider: 'OpenAI', model: 'gpt-4o' } }
-    ],
-    connections: [
-        { id: 'c1', sourceId: '1', targetId: '2' },
-        { id: 'c2', sourceId: '2', targetId: '3' },
-        { id: 'c3', sourceId: '2', targetId: '4' }
-    ]
-  },
-  { 
-    id: 'wf-4', 
-    name: 'Mean Reversion RSI', 
-    description: 'Buy oversold, sell overbought on 1H timeframe.', 
-    status: 'archived', 
-    updatedAt: '2023-09-28 16:45',
-    nodes: [],
-    connections: []
   },
 ];
 
