@@ -8,14 +8,14 @@ import {
 import { 
   Settings, Plus, Trash2, Edit2, Database, Save, 
   LayoutGrid, Activity, DollarSign, TrendingUp, BarChart3, PieChart as PieIcon,
-  Table as TableIcon, ExternalLink, GripHorizontal
+  Table as TableIcon, ExternalLink, GripHorizontal, Link
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { DataSource, DashboardWidget, WidgetType, DataSourceType } from '../types';
 import { INITIAL_DASHBOARD_WIDGETS } from '../constants';
 import { useTranslation } from '../contexts/LanguageContext';
 import { dataSourceService } from '../services/dataSourceService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 // --- MOCK DATA GENERATORS ---
 const generateTimeSeriesData = (points = 20) => Array.from({ length: points }, (_, i) => ({
@@ -61,8 +61,8 @@ const generateCandleData = (count = 20) => {
   });
 };
 
-const generateTableData = (count = 5) => Array.from({ length: count }, (_, i) => ({
-  symbol: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'][i % 5],
+const generateTableData = (count = 5, symbolOverride?: string) => Array.from({ length: count }, (_, i) => ({
+  symbol: symbolOverride || ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'][i % 5],
   signal: ['BUY', 'SELL', 'HOLD', 'BUY', 'STRONG BUY'][i % 5],
   price: (100 + Math.random() * 200).toFixed(2),
   change: (Math.random() * 5 * (Math.random() > 0.5 ? 1 : -1)).toFixed(2) + '%',
@@ -175,10 +175,13 @@ const WidgetEditor = ({
           </div>
 
           <div>
-             <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.query')}</label>
+             <div className="flex justify-between items-center mb-1">
+               <label className="text-xs text-slate-400">{t('dash.widget.query')}</label>
+               <span className="text-[10px] text-cyan-500 cursor-help" title={t('dash.params.hint')}>Use {'{{param}}'}</span>
+             </div>
              <textarea 
                className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-300 h-24 resize-none"
-               placeholder="SELECT * FROM data..."
+               placeholder="SELECT * FROM data WHERE symbol = '{{symbol}}'..."
                value={localWidget.script || ''}
                onChange={e => setLocalWidget({...localWidget, script: e.target.value})}
              />
@@ -203,6 +206,10 @@ export const Dashboard: React.FC = () => {
   const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   
+  // URL Params for parameter injection
+  const [searchParams] = useSearchParams();
+  const params = Object.fromEntries(searchParams.entries());
+  
   // Drag and Drop State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -212,6 +219,14 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     dataSourceService.getAll().then(setDataSources);
   }, []);
+
+  // -- Helper: Process Template Strings {{key}} --
+  const processTemplate = (text: string | undefined): string => {
+    if (!text) return '';
+    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
+        return params[key] || `{{${key}}}`;
+    });
+  };
 
   // -- Drag and Drop Handlers --
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -246,6 +261,8 @@ export const Dashboard: React.FC = () => {
 
   // Helper to render chart based on type
   const renderChart = (widget: DashboardWidget) => {
+    const processedScript = processTemplate(widget.script);
+
     switch(widget.type) {
       case WidgetType.LINE:
         return (
@@ -323,31 +340,42 @@ export const Dashboard: React.FC = () => {
           </ResponsiveContainer>
          );
       case WidgetType.TABLE:
-          const tableData = generateTableData();
+          // Simulate fetching data filtered by parameter if present in query
+          const symbolMatch = processedScript.match(/symbol\s*=\s*'([^']+)'/i) || processedScript.match(/symbol\s*=\s*"([^"]+)"/i);
+          const activeSymbol = symbolMatch ? symbolMatch[1] : (params['symbol'] || undefined);
+
+          const tableData = generateTableData(5, activeSymbol);
+
           return (
-            <div className="overflow-auto h-full w-full custom-scrollbar">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/50 sticky top-0 font-bold text-slate-400 backdrop-blur">
-                   <tr>
-                     {Object.keys(tableData[0]).map(key => <th key={key} className="p-2 capitalize border-b border-slate-700/50">{key}</th>)}
-                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/50">
-                  {tableData.map((row, idx) => (
-                     <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
-                        {Object.values(row).map((val, i) => (
-                          <td key={i} className="p-2 truncate max-w-[100px]" title={String(val)}>
-                             {i === 1 ? (
-                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${val === 'BUY' || val === 'STRONG BUY' ? 'bg-green-900/30 text-green-400' : val === 'SELL' ? 'bg-red-900/30 text-red-400' : 'bg-slate-700 text-slate-400'}`}>
-                                 {val}
-                               </span>
-                             ) : val}
-                          </td>
-                        ))}
-                     </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex flex-col h-full">
+                {/* Debug Info for Demo */}
+                <div className="text-[9px] text-slate-600 font-mono mb-1 truncate px-1">
+                    SQL: {processedScript || 'SELECT * ...'}
+                </div>
+                <div className="overflow-auto flex-1 custom-scrollbar w-full">
+                <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-900/50 sticky top-0 font-bold text-slate-400 backdrop-blur">
+                    <tr>
+                        {Object.keys(tableData[0]).map(key => <th key={key} className="p-2 capitalize border-b border-slate-700/50">{key}</th>)}
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                    {tableData.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                            {Object.values(row).map((val, i) => (
+                            <td key={i} className="p-2 truncate max-w-[100px]" title={String(val)}>
+                                {i === 1 ? (
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${val === 'BUY' || val === 'STRONG BUY' ? 'bg-green-900/30 text-green-400' : val === 'SELL' ? 'bg-red-900/30 text-red-400' : 'bg-slate-700 text-slate-400'}`}>
+                                    {val}
+                                </span>
+                                ) : val}
+                            </td>
+                            ))}
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+                </div>
             </div>
           );
       default:
@@ -358,7 +386,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       {/* Toolbar */}
-      <div className="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+      <div className="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 shrink-0">
         <div className="flex items-center gap-4">
           <Button 
              variant={isEditing ? 'primary' : 'secondary'} 
@@ -379,6 +407,18 @@ export const Dashboard: React.FC = () => {
             </Button>
           )}
         </div>
+        
+        {/* Active Params Display */}
+        {Object.keys(params).length > 0 && (
+            <div className="flex items-center gap-2 text-xs bg-slate-900 px-3 py-1.5 rounded-full border border-slate-700/50">
+               <Link size={12} className="text-cyan-400"/>
+               <span className="text-slate-500">{t('dash.params.active')}:</span>
+               {Object.entries(params).map(([k, v]) => (
+                   <span key={k} className="font-mono text-cyan-200 bg-slate-800 px-1 rounded">{k}={v}</span>
+               ))}
+            </div>
+        )}
+
         <div>
            <Button 
              variant="ghost" 
@@ -394,7 +434,11 @@ export const Dashboard: React.FC = () => {
       {/* Grid Canvas */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[160px]">
-          {widgets.map((widget, index) => (
+          {widgets.map((widget, index) => {
+            // Apply parameter substitution to the title
+            const displayTitle = processTemplate(widget.title);
+            
+            return (
             <div 
               key={widget.id} 
               draggable={isEditing}
@@ -439,7 +483,7 @@ export const Dashboard: React.FC = () => {
               <div className="h-full p-5 flex flex-col">
                 {widget.type !== WidgetType.STAT && (
                    <h3 className="text-sm font-medium text-slate-400 mb-4 flex justify-between items-center shrink-0">
-                     {widget.title}
+                     {displayTitle}
                      {widget.dataSourceId && <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-500">SQL</span>}
                    </h3>
                 )}
@@ -447,12 +491,12 @@ export const Dashboard: React.FC = () => {
                 <div className="flex-1 min-h-0 relative pointer-events-none md:pointer-events-auto">
                     {/* Note: pointer-events logic can be refined if charts interact poorly with drag */}
                   {widget.type === WidgetType.STAT ? (
-                    <StatCard widget={widget} />
+                    <StatCard widget={{...widget, title: displayTitle}} />
                   ) : renderChart(widget)}
                 </div>
               </div>
             </div>
-          ))}
+          )})}
           
           {isEditing && (
              <div 

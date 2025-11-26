@@ -194,6 +194,8 @@ const translations = {
     'dash.widget.grid': '网格宽度',
     'dash.widget.source': '数据源',
     'dash.widget.query': '数据查询 / 脚本',
+    'dash.params.active': '页面参数',
+    'dash.params.hint': '提示: 在组件标题或查询中使用 {{param}} 可引用 URL 参数。',
 
     // Strategy List & Editor
     'strategy.title': '投资策略',
@@ -453,6 +455,8 @@ const translations = {
     'dash.widget.grid': 'Grid Width',
     'dash.widget.source': 'Data Source',
     'dash.widget.query': 'Data Query / Script',
+    'dash.params.active': 'Page Params',
+    'dash.params.hint': 'Hint: Use {{param}} in titles or queries to reference URL parameters.',
 
     // Strategy List & Editor
     'strategy.title': 'Investment Strategies',
