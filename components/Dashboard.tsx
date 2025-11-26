@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, 
@@ -7,7 +8,7 @@ import {
 import { 
   Settings, Plus, Trash2, Edit2, Database, Save, 
   LayoutGrid, Activity, DollarSign, TrendingUp, BarChart3, PieChart as PieIcon,
-  Table as TableIcon, ExternalLink
+  Table as TableIcon, ExternalLink, GripHorizontal
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { DataSource, DashboardWidget, WidgetType, DataSourceType } from '../types';
@@ -201,12 +202,47 @@ export const Dashboard: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
+  
+  // Drag and Drop State
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
     dataSourceService.getAll().then(setDataSources);
   }, []);
+
+  // -- Drag and Drop Handlers --
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (!isEditing) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // Optional: Set a custom drag image if needed
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (!isEditing) return;
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    if (!isEditing || draggedIndex === null) return;
+    e.preventDefault();
+
+    if (draggedIndex === dropIndex) {
+        setDraggedIndex(null);
+        return;
+    }
+
+    const newWidgets = [...widgets];
+    const [removed] = newWidgets.splice(draggedIndex, 1);
+    newWidgets.splice(dropIndex, 0, removed);
+    
+    setWidgets(newWidgets);
+    setDraggedIndex(null);
+  };
 
   // Helper to render chart based on type
   const renderChart = (widget: DashboardWidget) => {
@@ -358,9 +394,13 @@ export const Dashboard: React.FC = () => {
       {/* Grid Canvas */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[160px]">
-          {widgets.map(widget => (
+          {widgets.map((widget, index) => (
             <div 
               key={widget.id} 
+              draggable={isEditing}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
               className={`
                 relative group rounded-xl border transition-all duration-200 overflow-hidden
                 ${widget.type === WidgetType.STAT ? 'row-span-1' : 'row-span-2'}
@@ -368,24 +408,32 @@ export const Dashboard: React.FC = () => {
                 ${widget.colSpan === 2 ? 'col-span-1 md:col-span-2' : ''}
                 ${widget.colSpan === 3 ? 'col-span-1 md:col-span-2 lg:col-span-3' : ''}
                 ${widget.colSpan === 4 ? 'col-span-1 md:col-span-2 lg:col-span-4' : ''}
-                ${isEditing ? 'border-dashed border-slate-600 bg-slate-900/30' : 'border-slate-800 bg-slate-900/50 backdrop-blur hover:border-slate-700'}
+                ${isEditing ? 'border-dashed border-slate-600 bg-slate-900/30 cursor-move' : 'border-slate-800 bg-slate-900/50 backdrop-blur hover:border-slate-700'}
+                ${draggedIndex === index ? 'opacity-50 ring-2 ring-cyan-500/50' : ''}
               `}
             >
               {isEditing && (
-                <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => { setEditingWidget(widget); setIsWidgetModalOpen(true); }}
-                    className="p-1.5 bg-slate-700 text-slate-200 rounded hover:bg-cyan-600"
-                  >
-                    <Settings size={14} />
-                  </button>
-                  <button 
-                    onClick={() => setWidgets(widgets.filter(w => w.id !== widget.id))}
-                    className="p-1.5 bg-slate-700 text-red-400 rounded hover:bg-red-600 hover:text-white"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <>
+                    {/* Drag Handle Indicator */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 text-slate-600 cursor-grab active:cursor-grabbing">
+                        <GripHorizontal size={16} />
+                    </div>
+
+                    <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                        onClick={() => { setEditingWidget(widget); setIsWidgetModalOpen(true); }}
+                        className="p-1.5 bg-slate-700 text-slate-200 rounded hover:bg-cyan-600"
+                    >
+                        <Settings size={14} />
+                    </button>
+                    <button 
+                        onClick={() => setWidgets(widgets.filter(w => w.id !== widget.id))}
+                        className="p-1.5 bg-slate-700 text-red-400 rounded hover:bg-red-600 hover:text-white"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                    </div>
+                </>
               )}
 
               <div className="h-full p-5 flex flex-col">
@@ -396,7 +444,8 @@ export const Dashboard: React.FC = () => {
                    </h3>
                 )}
                 
-                <div className="flex-1 min-h-0 relative">
+                <div className="flex-1 min-h-0 relative pointer-events-none md:pointer-events-auto">
+                    {/* Note: pointer-events logic can be refined if charts interact poorly with drag */}
                   {widget.type === WidgetType.STAT ? (
                     <StatCard widget={widget} />
                   ) : renderChart(widget)}
