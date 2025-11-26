@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation, Outlet, useParams, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe, Database, LogOut, Check } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
 import { DashboardList } from './components/DashboardList';
+import { CreateDashboardPage } from './components/CreateDashboardPage';
 import { StrategyList } from './components/StrategyList';
 import { StrategyEditor } from './components/StrategyEditor';
 import { BacktestList } from './components/BacktestList';
@@ -152,7 +154,7 @@ const Layout = () => {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-              <input type="text" placeholder={t('header.search_placeholder')} className="bg-slate-950 border border-slate-800 text-sm rounded-full pl-10 pr-4 py-1.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 transition-all" />
+              <input type="text" placeholder={t('header.search_placeholder')} className="bg-slate-900 border border-slate-800 text-sm rounded-full pl-10 pr-4 py-1.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 transition-all" />
             </div>
             
             {/* Notification Bell */}
@@ -355,7 +357,8 @@ export default function App() {
              <Route path=":id" element={<BacktestDetailPage />} />
           </Route>
           <Route path="dashboards">
-             <Route index element={<DashboardList onSelect={(d) => navigate(`/dashboards/${d.id}`)} onCreate={() => {}} />} />
+             <Route index element={<DashboardList onSelect={(d) => navigate(`/dashboards/${d.id}`)} onCreate={() => navigate('/dashboards/new')} />} />
+             <Route path="new" element={<CreateDashboardPage />} />
              <Route path=":id" element={<DashboardPage />} />
           </Route>
           <Route path="market" element={<MarketAnalysis />} />

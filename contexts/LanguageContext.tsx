@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 type Language = 'zh' | 'en';
@@ -175,6 +176,8 @@ const translations = {
     'dashboard.new': '新建看板',
     'dashboard.widgets': '组件',
     'dashboard.create_card': '创建新看板',
+    'dashboard.create_title': '创建新数据看板',
+    'dashboard.create_subtitle': '配置看板的基本信息，后续可添加图表组件。',
 
     // Dashboard Editor
     'dash.edit': '编辑看板',
@@ -432,6 +435,8 @@ const translations = {
     'dashboard.new': 'New Dashboard',
     'dashboard.widgets': 'Widgets',
     'dashboard.create_card': 'Create New Dashboard',
+    'dashboard.create_title': 'Create New Dashboard',
+    'dashboard.create_subtitle': 'Configure basic dashboard information. You can add widgets later.',
 
     // Dashboard Editor
     'dash.edit': 'Edit Dashboard',

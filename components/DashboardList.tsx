@@ -31,7 +31,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
     load();
   }, []);
 
-  // Pagination Logic (No filtering yet for Dashboards, but could be added)
+  // Pagination Logic
   const indexOfLastItem = currentPage * pageSize;
   const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentDashboards = dashboards.slice(indexOfFirstItem, indexOfLastItem);
@@ -53,21 +53,10 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 content-start overflow-y-auto min-h-0 pr-2">
-            {/* Create New Card Always Visible or First? Let's keep it first in list or separate. 
-                Common UX is to have it as the first item of the list, 
-                but for pagination, usually it's a separate action or part of the first page.
-                Here, let's include it in the grid but strictly it's not "paginated" data. 
-                Let's keep it separate or just insert it into the view if on page 1.
-            */}
-            {currentPage === 1 && (
-                <div 
-                onClick={onCreate}
-                className="border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:border-cyan-500/50 hover:text-cyan-500 hover:bg-slate-900/50 transition-all cursor-pointer min-h-[280px]"
-                >
-                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-4 group-hover:bg-cyan-500/10">
-                    <Plus size={24} />
-                </div>
-                <span className="font-semibold">{t('dashboard.create_card')}</span>
+            {currentDashboards.length === 0 && (
+                <div className="col-span-full text-center py-20 text-slate-500 flex flex-col items-center justify-center gap-4">
+                    <p>No dashboards found.</p>
+                    <Button variant="secondary" onClick={onCreate}>Create your first dashboard</Button>
                 </div>
             )}
 

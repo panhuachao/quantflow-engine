@@ -26,13 +26,13 @@ export const dashboardService = {
     }
   },
 
-  create: async (): Promise<DashboardMeta> => {
+  create: async (name: string, description: string): Promise<DashboardMeta> => {
     if (API_CONFIG.USE_MOCK) {
       await new Promise(resolve => setTimeout(resolve, API_CONFIG.MOCK_LATENCY));
       const newDash: DashboardMeta = {
         id: `db-${Date.now()}`,
-        name: 'New Dashboard',
-        description: 'Custom market view.',
+        name: name || 'New Dashboard',
+        description: description || 'Custom market view.',
         widgetCount: 0,
         updatedAt: 'Just now',
         thumbnailColor: 'bg-slate-800'
@@ -40,7 +40,7 @@ export const dashboardService = {
       mockDashboards = [newDash, ...mockDashboards];
       return newDash;
     } else {
-      return apiClient.post<DashboardMeta>('/dashboards', { name: 'New Dashboard' });
+      return apiClient.post<DashboardMeta>('/dashboards', { name, description });
     }
   }
 };
