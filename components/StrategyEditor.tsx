@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { StrategyItem } from '../types';
 import { Button } from './ui/Button';
 import { Play, Save, Settings, Code, Activity } from 'lucide-react';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface StrategyEditorProps {
   strategy: StrategyItem;
@@ -14,6 +15,7 @@ export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave
   const [code, setCode] = useState(strategy.code);
   const [name, setName] = useState(strategy.name);
   const [isRunning, setIsRunning] = useState(false);
+  const { t } = useTranslation();
 
   const handleRun = () => {
     if (onRunBacktest) {
@@ -43,8 +45,8 @@ export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave
             </div>
          </div>
          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Settings size={14}/>}>Config</Button>
-            <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => onSave({ ...strategy, code, name })}>Save</Button>
+            <Button variant="secondary" size="sm" icon={<Settings size={14}/>}>{t('editor.btn.config')}</Button>
+            <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={() => onSave({ ...strategy, code, name })}>{t('editor.btn.save')}</Button>
             <div className="w-px h-6 bg-slate-700 mx-1" />
             <Button 
                 size="sm" 
@@ -53,7 +55,7 @@ export const StrategyEditor: React.FC<StrategyEditorProps> = ({ strategy, onSave
                 onClick={handleRun}
                 isLoading={isRunning}
             >
-                Run Backtest
+                {t('editor.btn.run')}
             </Button>
          </div>
       </div>

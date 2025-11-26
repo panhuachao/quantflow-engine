@@ -7,6 +7,7 @@ import { Button } from './ui/Button';
 import { NodeCard } from './workflow/NodeCard';
 import { PropertiesPanel } from './workflow/PropertiesPanel';
 import { getNodeDefinition, NODE_REGISTRY } from './workflow/nodeDefinitions';
+import { useTranslation } from '../contexts/LanguageContext';
 
 // SVG Path helper
 const getBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
@@ -15,15 +16,18 @@ const getBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
 
 const LogPanel = ({ logs, isOpen, onToggle, onClear, title }: { logs: LogEntry[], isOpen: boolean, onToggle: () => void, onClear: () => void, title?: string }) => {
   const endRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  
   useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs, isOpen]);
+  
   return (
     <div className={`absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 transition-all duration-300 z-30 flex flex-col ${isOpen ? 'h-64' : 'h-10'}`}>
        <div className="flex items-center justify-between px-4 h-10 bg-slate-800 cursor-pointer hover:bg-slate-700 select-none" onClick={onToggle}>
          <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-           <Terminal size={14} /> <span>{title || 'System Console'} {logs.length > 0 && `(${logs.length})`}</span>
+           <Terminal size={14} /> <span>{title || t('workflow.editor.console')} {logs.length > 0 && `(${logs.length})`}</span>
          </div>
          <div className="flex items-center gap-2">
-            {isOpen && <button onClick={(e) => { e.stopPropagation(); onClear(); }} className="text-[10px] text-slate-500 hover:text-red-400 px-2">Clear</button>}
+            {isOpen && <button onClick={(e) => { e.stopPropagation(); onClear(); }} className="text-[10px] text-slate-500 hover:text-red-400 px-2">{t('workflow.editor.clear')}</button>}
             {isOpen ? <ChevronDown size={14} className="text-slate-400"/> : <ChevronUp size={14} className="text-slate-400"/>}
          </div>
        </div>
@@ -47,10 +51,11 @@ const LogPanel = ({ logs, isOpen, onToggle, onClear, title }: { logs: LogEntry[]
 };
 
 const HistoryPanel = ({ history, onClose, onSelect }: { history: ExecutionHistoryItem[], onClose: () => void, onSelect: (item: ExecutionHistoryItem) => void }) => {
+  const { t } = useTranslation();
   return (
     <div className="absolute top-20 right-4 bottom-20 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-          <h3 className="font-bold text-slate-200 flex items-center gap-2"><History size={16}/> Execution History</h3>
+          <h3 className="font-bold text-slate-200 flex items-center gap-2"><History size={16}/> {t('workflow.editor.history')}</h3>
           <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={16}/></button>
        </div>
        <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -90,6 +95,7 @@ interface WorkflowCanvasProps {
 }
 
 export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave, onBack }) => {
+  const { t } = useTranslation();
   // Init state from props if available, else default
   const [nodes, setNodes] = useState<NodeData[]>(workflow?.nodes || INITIAL_NODES);
   const [connections, setConnections] = useState<Connection[]>(workflow?.connections || INITIAL_CONNECTIONS);
@@ -331,12 +337,14 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
                <h3 className="font-bold text-slate-200">{workflow?.name || 'Untitled Workflow'}</h3>
                <div className="text-xs text-slate-500 flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${workflow?.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                  {workflow?.status || 'Draft'}
+                  {workflow?.status === 'active' ? t('workflow.status.active') : t('workflow.status.draft')}
                </div>
             </div>
          </div>
          <div className="flex items-center gap-2">
-             <Button variant="secondary" size="sm" onClick={() => addLog("Validated graph structure.", "info")} icon={<CheckCircle size={16}/>}>Validate</Button>
+             <Button variant="secondary" size="sm" onClick={() => addLog("Validated graph structure.", "info")} icon={<CheckCircle size={16}/>}>
+                {t('workflow.editor.validate')}
+             </Button>
              <Button 
                 variant="secondary" 
                 size="sm" 
@@ -344,9 +352,9 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
                 icon={<History size={16}/>}
                 className={isHistoryPanelOpen ? 'bg-slate-700 text-cyan-400' : ''}
              >
-                History
+                {t('workflow.editor.history')}
              </Button>
-             {onSave && <Button variant="primary" size="sm" onClick={handleSave} icon={<Save size={16}/>}>Save Changes</Button>}
+             {onSave && <Button variant="primary" size="sm" onClick={handleSave} icon={<Save size={16}/>}>{t('workflow.editor.save_changes')}</Button>}
          </div>
       </div>
 
@@ -429,7 +437,10 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
            <Button size="lg" className={`rounded-full shadow-2xl pl-6 pr-8 py-4 border-4 border-slate-900 ${isRunning ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}`} onClick={runSimulation} disabled={isRunning}>
               <div className="flex items-center gap-3">
                  {isRunning ? <Clock className="w-5 h-5 animate-spin" /> : <PlayCircle fill="currentColor" className="w-5 h-5" />}
-                 <div className="text-left"><div className="text-xs font-medium opacity-80 uppercase tracking-wider">{isRunning ? 'Running...' : 'Ready'}</div><div className="font-bold">{isRunning ? 'Executing Flow' : 'Deploy Strategy'}</div></div>
+                 <div className="text-left">
+                    <div className="text-xs font-medium opacity-80 uppercase tracking-wider">{isRunning ? t('workflow.editor.running') : t('workflow.editor.ready')}</div>
+                    <div className="font-bold">{isRunning ? t('workflow.editor.executing') : t('workflow.editor.deploy')}</div>
+                 </div>
               </div>
            </Button>
         </div>
@@ -458,7 +469,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
         isOpen={isLogPanelOpen} 
         onToggle={() => setIsLogPanelOpen(!isLogPanelOpen)} 
         onClear={() => setLogs([])} 
-        title={viewingHistoryItem ? `Log Record (${viewingHistoryItem.timestamp})` : 'System Console'}
+        title={viewingHistoryItem ? `${t('workflow.editor.logs')} (${viewingHistoryItem.timestamp})` : t('workflow.editor.console')}
       />
     </div>
   );

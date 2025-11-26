@@ -6,6 +6,8 @@ import {
   Database, Filter, PlayCircle, MoreHorizontal, DownloadCloud, Code, BrainCircuit, Sparkles 
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useTranslation } from '../../contexts/LanguageContext';
+import { NODE_CONTENT_REGISTRY } from './NodeContents';
 
 // --- Helper Components for Config ---
 
@@ -76,30 +78,26 @@ const TimerNode: NodeDefinition = {
   iconColor: 'text-teal-400',
   description: 'Triggers workflow execution based on a schedule.',
   
-  ConfigComponent: ({ config, onUpdate }) => (
-    <div>
-      <div className="flex items-center gap-2 text-teal-400 mb-4">
-        <Clock size={16} />
-        <span className="text-sm font-semibold">Scheduler Config</span>
+  ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
+    return (
+      <div>
+        <div className="flex items-center gap-2 text-teal-400 mb-4">
+          <Clock size={16} />
+          <span className="text-sm font-semibold">{t('node.timer.schedule')}</span>
+        </div>
+        <ConfigInput 
+          label={t('node.timer.cron')} 
+          value={config.cron} 
+          onChange={(v: string) => onUpdate('cron', v)} 
+          placeholder="0 9 * * 1-5"
+        />
+        <div className="text-[10px] text-slate-500">Example: 0 9 * * 1-5 (Mon-Fri 9AM)</div>
       </div>
-      <ConfigInput 
-        label="Cron Expression" 
-        value={config.cron} 
-        onChange={(v: string) => onUpdate('cron', v)} 
-        placeholder="0 9 * * 1-5"
-      />
-      <div className="text-[10px] text-slate-500">Example: 0 9 * * 1-5 (Mon-Fri 9AM)</div>
-    </div>
-  ),
+    );
+  },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px]">
-      <div className="flex justify-between items-center text-slate-400">
-        <span>Schedule</span>
-        <code className="bg-slate-900 px-1.5 py-0.5 rounded text-teal-400 font-mono">{config.cron || '* * * * *'}</code>
-      </div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.TIMER],
 
   execute: async ({ log }) => {
     const timestamp = new Date().toISOString();
@@ -118,35 +116,33 @@ const DatabaseQueryNode: NodeDefinition = {
   iconColor: 'text-sky-400',
   description: 'Executes SQL queries to fetch data.',
 
-  ConfigComponent: ({ config, onUpdate }) => (
-    <div>
-      <div className="flex items-center gap-2 text-sky-400 mb-4">
-        <Search size={16} />
-        <span className="text-sm font-semibold">Data Query Config</span>
+  ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
+    return (
+      <div>
+        <div className="flex items-center gap-2 text-sky-400 mb-4">
+          <Search size={16} />
+          <span className="text-sm font-semibold">{t('node.db.query_config')}</span>
+        </div>
+        <ConfigInput 
+          label={t('node.db.conn_string')} 
+          value={config.connectionString} 
+          onChange={(v: string) => onUpdate('connectionString', v)} 
+          placeholder="postgres://user:pass@localhost:5432/db"
+        />
+        <ConfigTextArea 
+          label={t('node.db.query')} 
+          value={config.query} 
+          onChange={(v: string) => onUpdate('query', v)} 
+          placeholder="SELECT * FROM market_data..." 
+          height="h-40"
+        />
+        <Button variant="secondary" size="sm" className="w-full text-xs">{t('node.db.validate')}</Button>
       </div>
-      <ConfigInput 
-        label="Connection String" 
-        value={config.connectionString} 
-        onChange={(v: string) => onUpdate('connectionString', v)} 
-        placeholder="postgres://user:pass@localhost:5432/db"
-      />
-      <ConfigTextArea 
-        label="SQL Query" 
-        value={config.query} 
-        onChange={(v: string) => onUpdate('query', v)} 
-        placeholder="SELECT * FROM market_data..." 
-        height="h-40"
-      />
-      <Button variant="secondary" size="sm" className="w-full text-xs">Validate Query</Button>
-    </div>
-  ),
+    );
+  },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px]">
-      <div className="text-sky-300 font-mono truncate mb-1">{config.connectionString ? 'Conn Configured' : 'No Connection'}</div>
-      <div className="text-slate-500 truncate italic">{config.query || 'SELECT * FROM ...'}</div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.DATABASE_QUERY],
 
   execute: async ({ config, log }) => {
     // Mock Execution
@@ -171,41 +167,37 @@ const HttpRequestNode: NodeDefinition = {
   iconColor: 'text-violet-400',
   description: 'Makes HTTP/HTTPS requests to external APIs.',
 
-  ConfigComponent: ({ config, onUpdate }) => (
-    <div>
-      <div className="flex items-center gap-2 text-violet-400 mb-4">
-        <Globe size={16} />
-        <span className="text-sm font-semibold">HTTP Request Config</span>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-1">
-          <ConfigSelect 
-            label="Method" 
-            value={config.method || 'GET'} 
-            onChange={(v: string) => onUpdate('method', v)}
-            options={[
-              { label: 'GET', value: 'GET' }, { label: 'POST', value: 'POST' },
-              { label: 'PUT', value: 'PUT' }, { label: 'DELETE', value: 'DELETE' }
-            ]}
-          />
+  ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
+    return (
+      <div>
+        <div className="flex items-center gap-2 text-violet-400 mb-4">
+          <Globe size={16} />
+          <span className="text-sm font-semibold">{t('node.http.config')}</span>
         </div>
-        <div className="col-span-2">
-          <ConfigInput label="URL" value={config.url} onChange={(v: string) => onUpdate('url', v)} placeholder="https://api..." />
+        <div className="grid grid-cols-3 gap-2">
+          <div className="col-span-1">
+            <ConfigSelect 
+              label={t('node.http.method')}
+              value={config.method || 'GET'} 
+              onChange={(v: string) => onUpdate('method', v)}
+              options={[
+                { label: 'GET', value: 'GET' }, { label: 'POST', value: 'POST' },
+                { label: 'PUT', value: 'PUT' }, { label: 'DELETE', value: 'DELETE' }
+              ]}
+            />
+          </div>
+          <div className="col-span-2">
+            <ConfigInput label={t('node.http.url')} value={config.url} onChange={(v: string) => onUpdate('url', v)} placeholder="https://api..." />
+          </div>
         </div>
+        <ConfigTextArea label={t('node.http.headers')} value={config.headers} onChange={(v: string) => onUpdate('headers', v)} placeholder='{"Content-Type": "application/json"}' height="h-20"/>
+        <ConfigTextArea label={t('node.http.body')} value={config.body} onChange={(v: string) => onUpdate('body', v)} placeholder='{ "data": "value" }' height="h-24"/>
       </div>
-      <ConfigTextArea label="Headers (JSON)" value={config.headers} onChange={(v: string) => onUpdate('headers', v)} placeholder='{"Content-Type": "application/json"}' height="h-20"/>
-      <ConfigTextArea label="Body (JSON)" value={config.body} onChange={(v: string) => onUpdate('body', v)} placeholder='{ "data": "value" }' height="h-24"/>
-    </div>
-  ),
+    );
+  },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
-      <div className="flex gap-2">
-        <span className="font-bold text-violet-400">{config.method || 'GET'}</span>
-        <span className="text-slate-400 truncate">{config.url || 'http://...'}</span>
-      </div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.HTTP_REQUEST],
 
   execute: async ({ config, inputs, log }) => {
     log(`Sending ${config.method || 'GET'} request to ${config.url}...`);
@@ -229,47 +221,38 @@ const ScriptNode: NodeDefinition = {
   iconColor: 'text-pink-400',
   description: 'Executes custom Python or JavaScript code.',
 
-  ConfigComponent: ({ config, onUpdate }) => (
-    <div>
-      <div className="flex items-center gap-2 text-pink-400 mb-4">
-        <Code size={16} />
-        <span className="text-sm font-semibold">Code Execution</span>
+  ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
+    return (
+      <div>
+        <div className="flex items-center gap-2 text-pink-400 mb-4">
+          <Code size={16} />
+          <span className="text-sm font-semibold">{t('node.script.execution')}</span>
+        </div>
+        <ConfigSelect 
+          label={t('node.script.language')}
+          value={config.language || 'javascript'} 
+          onChange={(v: string) => onUpdate('language', v)}
+          options={[{ label: 'JavaScript (Node.js)', value: 'javascript' }, { label: 'Python 3.10', value: 'python' }]}
+        />
+        <ConfigTextArea 
+          label={t('node.script.logic')}
+          value={config.code} 
+          onChange={(v: string) => onUpdate('code', v)}
+          placeholder={config.language === 'python' 
+            ? "def main(inputs):\n    # Return data for next node\n    return inputs" 
+            : "return inputs.map(d => ({ ...d, processed: true }));"
+          } 
+          height="h-48"
+        />
+        <div className="text-[10px] text-slate-500">
+          Previous node data is available as <code>inputs</code> array.
+        </div>
       </div>
-      <ConfigSelect 
-        label="Language" 
-        value={config.language || 'javascript'} 
-        onChange={(v: string) => onUpdate('language', v)}
-        options={[{ label: 'JavaScript (Node.js)', value: 'javascript' }, { label: 'Python 3.10', value: 'python' }]}
-      />
-      <ConfigTextArea 
-        label="Code Logic" 
-        value={config.code} 
-        onChange={(v: string) => onUpdate('code', v)}
-        placeholder={config.language === 'python' 
-          ? "def main(inputs):\n    # Return data for next node\n    return inputs" 
-          : "return inputs.map(d => ({ ...d, processed: true }));"
-        } 
-        height="h-48"
-      />
-      <div className="text-[10px] text-slate-500">
-        Previous node data is available as <code>inputs</code> array.
-      </div>
-    </div>
-  ),
+    );
+  },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50">
-      <div className="flex justify-between items-center mb-1">
-         <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Code</span>
-         <span className={`text-[9px] px-1.5 rounded font-bold ${config.language === 'python' ? 'bg-blue-900/50 text-blue-400' : 'bg-yellow-900/50 text-yellow-400'}`}>
-            {config.language === 'python' ? 'PY' : 'JS'}
-         </span>
-      </div>
-      <div className="text-[10px] text-pink-400 font-mono bg-slate-900/50 p-1 rounded truncate opacity-80">
-        {config.code ? (config.code.length > 25 ? config.code.substring(0, 25) + '...' : config.code) : '// No code'}
-      </div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.SCRIPT],
 
   execute: async ({ config, inputs, log }) => {
     const lang = config.language || 'javascript';
@@ -299,15 +282,16 @@ const LLMNode: NodeDefinition = {
   description: 'AI-powered processing using DeepSeek, GPT-4, etc.',
 
   ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
     return (
       <div>
         <div className="flex items-center gap-2 text-purple-400 mb-4">
           <Sparkles size={16} />
-          <span className="text-sm font-semibold">Large Model Config</span>
+          <span className="text-sm font-semibold">{t('node.llm.config')}</span>
         </div>
         
         <ConfigSelect 
-          label="Model Provider"
+          label={t('node.llm.provider')}
           value={config.provider || 'DeepSeek'}
           onChange={(v: string) => onUpdate('provider', v)}
           options={[
@@ -319,14 +303,14 @@ const LLMNode: NodeDefinition = {
         />
 
         <ConfigInput 
-           label="Model Name"
+           label={t('node.llm.model')}
            value={config.model}
            onChange={(v: string) => onUpdate('model', v)}
            placeholder="e.g. deepseek-chat, gpt-4o, gemini-pro"
         />
 
         <ConfigInput 
-           label="API Key (Optional override)"
+           label={t('node.llm.apikey')}
            type="password"
            value={config.apiKey}
            onChange={(v: string) => onUpdate('apiKey', v)}
@@ -334,14 +318,14 @@ const LLMNode: NodeDefinition = {
         />
 
         <ConfigSlider 
-          label="Temperature"
+          label={t('node.llm.temperature')}
           value={config.temperature !== undefined ? config.temperature : 0.7}
           min={0} max={1} step={0.1}
           onChange={(v: number) => onUpdate('temperature', v)}
         />
 
         <ConfigTextArea 
-          label="System Instruction" 
+          label={t('node.llm.system')}
           value={config.systemPrompt} 
           onChange={(v: string) => onUpdate('systemPrompt', v)} 
           placeholder="You are an expert quantitative trader..." 
@@ -349,7 +333,7 @@ const LLMNode: NodeDefinition = {
         />
 
         <ConfigTextArea 
-          label="User Prompt" 
+          label={t('node.llm.user')}
           value={config.userPrompt} 
           onChange={(v: string) => onUpdate('userPrompt', v)} 
           placeholder="Analyze the following market data: {{inputs}}" 
@@ -360,18 +344,7 @@ const LLMNode: NodeDefinition = {
     );
   },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50">
-       <div className="flex justify-between items-center mb-1">
-          <span className="text-[9px] text-slate-500 uppercase font-semibold">Model</span>
-          <span className="text-[9px] text-purple-300 bg-purple-900/30 px-1 rounded">{config.provider || 'AI'}</span>
-       </div>
-       <div className="text-[10px] text-slate-400 font-mono truncate">{config.model || 'default-model'}</div>
-       <div className="text-[9px] text-slate-500 mt-1 italic truncate opacity-75">
-        "{config.userPrompt || 'No prompt'}"
-      </div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.LLM],
 
   execute: async ({ config, inputs, log }) => {
     const provider = config.provider || 'DeepSeek';
@@ -419,28 +392,26 @@ const StorageNode: NodeDefinition = {
   iconColor: 'text-indigo-400',
   description: 'Persist results to database or file.',
 
-  ConfigComponent: ({ config, onUpdate }) => (
-    <div>
-      <div className="flex items-center gap-2 text-indigo-400 mb-4">
-        <Save size={16} />
-        <span className="text-sm font-semibold">Storage Config</span>
+  ConfigComponent: ({ config, onUpdate }) => {
+    const { t } = useTranslation();
+    return (
+      <div>
+        <div className="flex items-center gap-2 text-indigo-400 mb-4">
+          <Save size={16} />
+          <span className="text-sm font-semibold">{t('node.storage.config')}</span>
+        </div>
+        <ConfigSelect 
+          label={t('node.storage.type')}
+          value={config.dbType || 'SQLite'} 
+          onChange={(v: string) => onUpdate('dbType', v)}
+          options={[{label: 'SQLite', value: 'SQLite'}, {label: 'MySQL', value: 'MySQL'}, {label: 'PostgreSQL', value: 'PostgreSQL'}]}
+        />
+        <ConfigInput label={t('node.storage.table')} value={config.table} onChange={(v: string) => onUpdate('table', v)} placeholder="results_table" />
       </div>
-      <ConfigSelect 
-        label="Type" 
-        value={config.dbType || 'SQLite'} 
-        onChange={(v: string) => onUpdate('dbType', v)}
-        options={[{label: 'SQLite', value: 'SQLite'}, {label: 'MySQL', value: 'MySQL'}, {label: 'PostgreSQL', value: 'PostgreSQL'}]}
-      />
-      <ConfigInput label="Table Name" value={config.table} onChange={(v: string) => onUpdate('table', v)} placeholder="results_table" />
-    </div>
-  ),
+    );
+  },
 
-  PreviewComponent: ({ config }) => (
-    <div className="mt-2 pt-2 border-t border-slate-700/50 text-[10px] space-y-1">
-      <div className="text-slate-400">{config.dbType || 'Storage'}</div>
-      <div className="text-indigo-300 truncate" title={config.table}>{config.table ? `Table: ${config.table}` : 'No table set'}</div>
-    </div>
-  ),
+  PreviewComponent: NODE_CONTENT_REGISTRY[NodeType.STORAGE],
 
   execute: async ({ config, inputs, log }) => {
     log(`Opening connection to ${config.dbType || 'SQLite'}...`);

@@ -4,6 +4,7 @@ import { NodeData } from '../../types';
 import { getNodeDefinition } from './nodeDefinitions';
 import { X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 interface PropertiesPanelProps {
   node: NodeData;
@@ -15,6 +16,7 @@ interface PropertiesPanelProps {
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose, onUpdate, onDelete }) => {
   const definition = getNodeDefinition(node.type);
   const { ConfigComponent, icon: Icon, iconColor, label } = definition;
+  const { t } = useTranslation();
 
   // Wrapper for onUpdate to handle deep config keys properly if needed
   const handleConfigUpdate = (key: string, value: any) => {
@@ -28,7 +30,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose,
   return (
     <div className="w-96 bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto z-20 shadow-2xl h-full flex flex-col">
       <div className="flex justify-between items-center mb-6 shrink-0">
-        <h2 className="text-xl font-bold text-white">Properties</h2>
+        <h2 className="text-xl font-bold text-white">{t('workflow.editor.properties')}</h2>
         <button onClick={onClose} className="text-slate-400 hover:text-white">
           <X size={20} />
         </button>
@@ -36,7 +38,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose,
 
       <div className="space-y-6 flex-1 overflow-y-auto">
         <div>
-          <label className="block text-xs font-medium text-slate-400 uppercase mb-2">Node Label</label>
+          <label className="block text-xs font-medium text-slate-400 uppercase mb-2">{t('workflow.editor.node_label')}</label>
           <input 
             type="text" 
             value={node.label}
@@ -63,7 +65,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ node, onClose,
 
       <div className="border-t border-slate-800 pt-6 mt-4 shrink-0">
         <Button variant="danger" size="sm" className="w-full" onClick={onDelete} icon={<Trash2 size={16}/>}>
-          Delete Node
+          {t('workflow.editor.delete_node')}
         </Button>
       </div>
     </div>

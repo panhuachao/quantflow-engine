@@ -13,6 +13,7 @@ import {
 import { Button } from './ui/Button';
 import { DataSource, DashboardWidget, WidgetType, DataSourceType } from '../types';
 import { INITIAL_DATA_SOURCES, INITIAL_DASHBOARD_WIDGETS } from '../constants';
+import { useTranslation } from '../contexts/LanguageContext';
 
 // --- MOCK DATA GENERATORS ---
 const generateTimeSeriesData = (points = 20) => Array.from({ length: points }, (_, i) => ({
@@ -99,6 +100,7 @@ const DataSourceModal = ({
   const [name, setName] = useState('');
   const [type, setType] = useState<DataSourceType>(DataSourceType.SQLITE);
   const [conn, setConn] = useState('');
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -106,7 +108,7 @@ const DataSourceModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Database size={20} className="text-cyan-400"/> Manage Data Sources
+          <Database size={20} className="text-cyan-400"/> {t('dash.manage_sources')}
         </h3>
         
         <div className="space-y-3 max-h-60 overflow-y-auto mb-6">
@@ -122,7 +124,7 @@ const DataSourceModal = ({
         </div>
 
         <div className="border-t border-slate-800 pt-4 space-y-4">
-          <h4 className="text-sm font-medium text-slate-400">Add New Connection</h4>
+          <h4 className="text-sm font-medium text-slate-400">{t('dash.add_conn')}</h4>
           <input 
             className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" 
             placeholder="Source Name"
@@ -140,7 +142,7 @@ const DataSourceModal = ({
             value={conn} onChange={e => setConn(e.target.value)}
           />
           <div className="flex gap-2 justify-end mt-4">
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button variant="ghost" onClick={onClose}>{t('dash.cancel')}</Button>
             <Button onClick={() => {
               onAdd({ id: Date.now().toString(), name, type, config: { connectionString: conn } });
               setName(''); setConn('');
@@ -166,6 +168,7 @@ const WidgetEditor = ({
   dataSources: DataSource[];
 }) => {
   const [localWidget, setLocalWidget] = useState<DashboardWidget | null>(null);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     if (widget) {
@@ -188,13 +191,13 @@ const WidgetEditor = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl">
         <h3 className="text-xl font-bold text-white mb-4">
-          {widget ? 'Edit Widget' : 'Add Widget'}
+          {widget ? t('dash.edit_widget') : t('dash.add_widget')}
         </h3>
         
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Title</label>
+              <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.title')}</label>
               <input 
                 className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white"
                 value={localWidget.title}
@@ -202,7 +205,7 @@ const WidgetEditor = ({
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Type</label>
+              <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.type')}</label>
               <select 
                 className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white"
                 value={localWidget.type}
@@ -215,7 +218,7 @@ const WidgetEditor = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Grid Width (1-4)</label>
+              <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.grid')} (1-4)</label>
               <select 
                 className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white"
                 value={localWidget.colSpan}
@@ -225,7 +228,7 @@ const WidgetEditor = ({
               </select>
             </div>
              <div>
-              <label className="text-xs text-slate-400 block mb-1">Data Source</label>
+              <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.source')}</label>
               <select 
                 className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white"
                 value={localWidget.dataSourceId || ''}
@@ -238,7 +241,7 @@ const WidgetEditor = ({
           </div>
 
           <div>
-             <label className="text-xs text-slate-400 block mb-1">Data Query / Script</label>
+             <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.query')}</label>
              <textarea 
                className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-300 h-24"
                placeholder="SELECT * FROM data..."
@@ -248,8 +251,8 @@ const WidgetEditor = ({
           </div>
 
           <div className="flex gap-2 justify-end mt-6">
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => onSave(localWidget)}>Save Configuration</Button>
+            <Button variant="ghost" onClick={onClose}>{t('dash.cancel')}</Button>
+            <Button onClick={() => onSave(localWidget)}>{t('dash.save_config')}</Button>
           </div>
         </div>
       </div>
@@ -266,6 +269,7 @@ export const Dashboard: React.FC = () => {
   const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   const [isDSModalOpen, setIsDSModalOpen] = useState(false);
+  const { t } = useTranslation();
 
   // Helper to render chart based on type
   const renderChart = (widget: DashboardWidget) => {
@@ -389,7 +393,7 @@ export const Dashboard: React.FC = () => {
              onClick={() => setIsEditing(!isEditing)}
              icon={isEditing ? <Save size={16} /> : <Edit2 size={16} />}
           >
-            {isEditing ? 'Done Editing' : 'Edit Dashboard'}
+            {isEditing ? t('dash.done') : t('dash.edit')}
           </Button>
           {isEditing && (
             <Button 
@@ -398,7 +402,7 @@ export const Dashboard: React.FC = () => {
               onClick={() => { setEditingWidget(null); setIsWidgetModalOpen(true); }}
               icon={<Plus size={16} />}
             >
-              Add Widget
+              {t('dash.add_widget')}
             </Button>
           )}
         </div>
@@ -409,7 +413,7 @@ export const Dashboard: React.FC = () => {
              onClick={() => setIsDSModalOpen(true)}
              icon={<Database size={16} />}
            >
-             Data Sources
+             {t('dash.data_sources')}
            </Button>
         </div>
       </div>
@@ -470,7 +474,7 @@ export const Dashboard: React.FC = () => {
                className="col-span-1 row-span-1 rounded-xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-cyan-500 hover:text-cyan-400 transition-colors"
              >
                 <Plus size={32} />
-                <span className="text-xs font-medium mt-2">Add Widget</span>
+                <span className="text-xs font-medium mt-2">{t('dash.add_widget')}</span>
              </div>
           )}
         </div>
