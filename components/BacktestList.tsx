@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BacktestReport } from '../types';
 import { Button } from './ui/Button';
-import { Search, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Loader2, Settings } from 'lucide-react';
 import { backtestService } from '../services/backtestService';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -27,7 +27,7 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-950">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">{t('backtest.title')}</h2>
@@ -49,11 +49,12 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
               <tr className="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
                 <th className="p-4 font-medium">{t('backtest.col.status')}</th>
                 <th className="p-4 font-medium">{t('backtest.col.strategy')}</th>
+                <th className="p-4 font-medium hidden md:table-cell">{t('backtest.col.config')}</th>
                 <th className="p-4 font-medium">{t('backtest.col.date_range')}</th>
                 <th className="p-4 font-medium text-right">{t('backtest.col.return')}</th>
-                <th className="p-4 font-medium text-right">{t('backtest.col.sharpe')}</th>
-                <th className="p-4 font-medium text-right">{t('backtest.col.max_dd')}</th>
-                <th className="p-4 font-medium">{t('backtest.col.created')}</th>
+                <th className="p-4 font-medium text-right hidden sm:table-cell">{t('backtest.col.sharpe')}</th>
+                <th className="p-4 font-medium text-right hidden sm:table-cell">{t('backtest.col.max_dd')}</th>
+                <th className="p-4 font-medium hidden lg:table-cell">{t('backtest.col.created')}</th>
                 <th className="p-4"></th>
               </tr>
             </thead>
@@ -81,23 +82,36 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
                   </td>
                   <td className="p-4">
                     <div className="font-semibold text-slate-200">{report.strategyName}</div>
-                    <div className="text-xs text-slate-500 font-mono mt-0.5">{report.symbol} • {report.interval}</div>
+                    <div className="text-xs text-slate-500 font-mono mt-0.5">{report.id.substring(0,8)}</div>
+                  </td>
+                  <td className="p-4 hidden md:table-cell">
+                    <div className="flex flex-col gap-1">
+                       <span className="text-xs font-bold text-orange-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded w-fit">
+                          {report.symbol}
+                       </span>
+                       {report.parameters && (
+                         <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono max-w-[150px] truncate" title={report.parameters}>
+                           <Settings size={10} /> {report.parameters}
+                         </div>
+                       )}
+                    </div>
                   </td>
                   <td className="p-4 text-sm text-slate-400">
-                    {report.startDate} <span className="text-slate-600">to</span> {report.endDate}
+                    <div className="whitespace-nowrap">{report.startDate}</div>
+                    <div className="text-[10px] text-slate-600">to {report.endDate}</div>
                   </td>
                   <td className="p-4 text-right">
                     <div className={`font-mono font-medium ${report.returnPct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {report.returnPct > 0 ? '+' : ''}{report.returnPct}%
                     </div>
                   </td>
-                  <td className="p-4 text-right font-mono text-slate-300">
+                  <td className="p-4 text-right font-mono text-slate-300 hidden sm:table-cell">
                     {report.sharpeRatio.toFixed(2)}
                   </td>
-                  <td className="p-4 text-right font-mono text-red-400">
+                  <td className="p-4 text-right font-mono text-red-400 hidden sm:table-cell">
                     {report.maxDrawdown}%
                   </td>
-                  <td className="p-4 text-sm text-slate-500">
+                  <td className="p-4 text-sm text-slate-500 hidden lg:table-cell">
                     {report.createdAt}
                   </td>
                   <td className="p-4 text-right">

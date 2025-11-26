@@ -122,6 +122,17 @@ const translations = {
     'editor.btn.config': '配置',
     'editor.btn.save': '保存',
     'editor.btn.run': '运行回测',
+    
+    // Backtest Config Modal
+    'bt.config.title': '运行回测配置',
+    'bt.config.symbol': '股票标的 (Ticker)',
+    'bt.config.initial_cash': '初始资金',
+    'bt.config.start_date': '开始日期',
+    'bt.config.end_date': '结束日期',
+    'bt.config.params': '策略参数 (Params)',
+    'bt.config.params_placeholder': '例如: fast=10, slow=30 (逗号分隔)',
+    'bt.config.cancel': '取消',
+    'bt.config.confirm': '确认运行',
 
     // Backtest List
     'backtest.title': '回测评估',
@@ -129,6 +140,7 @@ const translations = {
     'backtest.search': '搜索报告...',
     'backtest.col.status': '状态',
     'backtest.col.strategy': '策略 / 标的',
+    'backtest.col.config': '配置详情',
     'backtest.col.date_range': '时间范围',
     'backtest.col.return': '收益率',
     'backtest.col.sharpe': '夏普比率',
@@ -273,12 +285,24 @@ const translations = {
     'editor.btn.save': 'Save',
     'editor.btn.run': 'Run Backtest',
 
+    // Backtest Config Modal
+    'bt.config.title': 'Backtest Configuration',
+    'bt.config.symbol': 'Ticker / Symbol',
+    'bt.config.initial_cash': 'Initial Cash',
+    'bt.config.start_date': 'Start Date',
+    'bt.config.end_date': 'End Date',
+    'bt.config.params': 'Strategy Params',
+    'bt.config.params_placeholder': 'e.g. fast=10, slow=30 (comma separated)',
+    'bt.config.cancel': 'Cancel',
+    'bt.config.confirm': 'Run Simulation',
+
     // Backtest List
     'backtest.title': 'Backtest Evaluation',
     'backtest.desc': 'Review performance reports from your automated strategy tests.',
     'backtest.search': 'Search reports...',
     'backtest.col.status': 'Status',
     'backtest.col.strategy': 'Strategy / Symbol',
+    'backtest.col.config': 'Configuration',
     'backtest.col.date_range': 'Date Range',
     'backtest.col.return': 'Return',
     'backtest.col.sharpe': 'Sharpe',

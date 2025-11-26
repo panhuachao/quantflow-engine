@@ -61,6 +61,14 @@ export interface StrategyItem {
   tags: string[];
 }
 
+export interface BacktestConfig {
+  symbol: string;
+  startDate: string;
+  endDate: string;
+  parameters: string; // e.g. "fast=10, slow=30"
+  initialCash: number;
+}
+
 export interface BacktestReport {
   id: string;
   strategyId: string;
@@ -69,6 +77,7 @@ export interface BacktestReport {
   interval: string;
   startDate: string;
   endDate: string;
+  parameters: string; // Stored parameters used for this run
   initialCash: number;
   finalValue: number;
   returnPct: number;

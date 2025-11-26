@@ -13,7 +13,7 @@ import { MarketAnalysis } from './components/MarketAnalysis';
 import { workflowService } from './services/workflowService';
 import { strategyService } from './services/strategyService';
 import { backtestService } from './services/backtestService';
-import { Workflow, StrategyItem, BacktestReport, NodeData, Connection } from './types';
+import { Workflow, StrategyItem, BacktestReport, NodeData, Connection, BacktestConfig } from './types';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 
 const Layout = () => {
@@ -158,8 +158,8 @@ const StrategyEditorPage = () => {
     setStrategy(saved);
   };
 
-  const handleRunBacktest = async (s: StrategyItem) => {
-      const report = await backtestService.runSimulation(s);
+  const handleRunBacktest = async (s: StrategyItem, config: BacktestConfig) => {
+      const report = await backtestService.runSimulation(s, config);
       navigate(`/backtests/${report.id}`);
       setTimeout(async () => {
           await backtestService.completeSimulation(report.id);
