@@ -194,6 +194,8 @@ const translations = {
     'dash.widget.grid': '网格宽度',
     'dash.widget.source': '数据源',
     'dash.widget.query': '数据查询 / 脚本',
+    'dash.widget.drilldown': '下钻跳转链接',
+    'dash.widget.drilldown_hint': '例如：/market?symbol={{value}}',
     'dash.params.active': '页面参数',
     'dash.params.hint': '提示: 在组件标题或查询中使用 {{param}} 可引用 URL 参数。',
 
@@ -455,6 +457,8 @@ const translations = {
     'dash.widget.grid': 'Grid Width',
     'dash.widget.source': 'Data Source',
     'dash.widget.query': 'Data Query / Script',
+    'dash.widget.drilldown': 'Drill Down URL',
+    'dash.widget.drilldown_hint': 'e.g. /market?symbol={{value}}',
     'dash.params.active': 'Page Params',
     'dash.params.hint': 'Hint: Use {{param}} in titles or queries to reference URL parameters.',
 

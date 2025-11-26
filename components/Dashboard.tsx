@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, 
@@ -71,12 +72,19 @@ const generateTableData = (count = 5, symbolOverride?: string) => Array.from({ l
 
 // --- SUB-COMPONENTS ---
 
-const StatCard = ({ widget }: { widget: DashboardWidget }) => {
+const StatCard = ({ widget, onDrillDown }: { widget: DashboardWidget, onDrillDown?: (val: string) => void }) => {
   const { value, subValue, color } = widget.config || { value: '0', subValue: '-', color: 'text-slate-400' };
+  
   return (
-    <div className="flex flex-col h-full justify-between">
+    <div 
+      className={`flex flex-col h-full justify-between ${onDrillDown ? 'cursor-pointer hover:bg-slate-800/50 transition-colors rounded-lg -m-2 p-2' : ''}`}
+      onClick={() => onDrillDown && onDrillDown(value)}
+    >
       <div>
-        <h4 className="text-slate-400 text-sm font-medium">{widget.title}</h4>
+        <h4 className="text-slate-400 text-sm font-medium flex items-center gap-2">
+            {widget.title}
+            {onDrillDown && <ExternalLink size={12} className="opacity-50" />}
+        </h4>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-100">{value}</span>
         </div>
@@ -128,7 +136,7 @@ const WidgetEditor = ({
           {widget ? t('dash.edit_widget') : t('dash.add_widget')}
         </h3>
         
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.title')}</label>
@@ -172,6 +180,20 @@ const WidgetEditor = ({
                 {dataSources.map(ds => <option key={ds.id} value={ds.id}>{ds.name}</option>)}
               </select>
             </div>
+          </div>
+
+          <div>
+             <label className="text-xs text-slate-400 block mb-1">{t('dash.widget.drilldown')}</label>
+             <input 
+               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-300"
+               placeholder={t('dash.widget.drilldown_hint')}
+               value={localWidget.config?.drillDown || ''}
+               onChange={e => setLocalWidget({
+                   ...localWidget, 
+                   config: { ...localWidget.config, drillDown: e.target.value }
+               })}
+             />
+             <div className="text-[10px] text-slate-500 mt-1">Use <code>{'{{value}}'}</code> to inject clicked data.</div>
           </div>
 
           <div>
@@ -228,12 +250,19 @@ export const Dashboard: React.FC = () => {
     });
   };
 
+  // -- Helper: Handle Drill Down --
+  const handleDrillDown = (widget: DashboardWidget, value: string) => {
+      if (isEditing || !widget.config?.drillDown) return;
+      
+      const url = widget.config.drillDown.replace(/\{\{\s*value\s*\}\}/g, value);
+      navigate(url);
+  };
+
   // -- Drag and Drop Handlers --
   const handleDragStart = (e: React.DragEvent, index: number) => {
     if (!isEditing) return;
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    // Optional: Set a custom drag image if needed
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -364,7 +393,14 @@ export const Dashboard: React.FC = () => {
                         <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
                             {Object.values(row).map((val, i) => (
                             <td key={i} className="p-2 truncate max-w-[100px]" title={String(val)}>
-                                {i === 1 ? (
+                                {i === 0 && widget.config?.drillDown ? (
+                                    <span 
+                                        onClick={() => handleDrillDown(widget, String(val))}
+                                        className="text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer font-bold"
+                                    >
+                                        {val}
+                                    </span>
+                                ) : i === 1 ? (
                                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${val === 'BUY' || val === 'STRONG BUY' ? 'bg-green-900/30 text-green-400' : val === 'SELL' ? 'bg-red-900/30 text-red-400' : 'bg-slate-700 text-slate-400'}`}>
                                     {val}
                                 </span>
@@ -491,7 +527,10 @@ export const Dashboard: React.FC = () => {
                 <div className="flex-1 min-h-0 relative pointer-events-none md:pointer-events-auto">
                     {/* Note: pointer-events logic can be refined if charts interact poorly with drag */}
                   {widget.type === WidgetType.STAT ? (
-                    <StatCard widget={{...widget, title: displayTitle}} />
+                    <StatCard 
+                      widget={{...widget, title: displayTitle}} 
+                      onDrillDown={widget.config?.drillDown ? (val) => handleDrillDown(widget, val) : undefined}
+                    />
                   ) : renderChart(widget)}
                 </div>
               </div>
