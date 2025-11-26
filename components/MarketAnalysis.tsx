@@ -6,6 +6,7 @@ import { Search, RefreshCw, BrainCircuit, TrendingUp, Activity, ArrowUp, ArrowDo
 import { Button } from './ui/Button';
 import { analyzeMarketData } from '../services/geminiService';
 import { marketService, MarketDataPoint } from '../services/marketService';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'SPY', 'QQQ', 'AAPL', 'NVDA'];
 
@@ -15,6 +16,7 @@ export const MarketAnalysis: React.FC = () => {
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     setLoadingData(true);
@@ -72,13 +74,13 @@ export const MarketAnalysis: React.FC = () => {
              <div className="h-8 w-px bg-slate-800" />
              <div className="flex items-center gap-8">
                 <div>
-                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-0.5">Last Price</span>
+                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-0.5">{t('market.last_price')}</span>
                    <span className={`text-xl font-bold font-mono flex items-center gap-2 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
                       ${latest.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                    </span>
                 </div>
                 <div>
-                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-0.5">24h Change</span>
+                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-0.5">{t('market.change_24h')}</span>
                    <span className={`text-sm font-bold font-mono flex items-center gap-1 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
                       {isPositive ? <ArrowUp size={14}/> : <ArrowDown size={14}/>}
                       {Math.abs(changePct).toFixed(2)}%
@@ -88,7 +90,7 @@ export const MarketAnalysis: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
              <Button variant="secondary" size="sm" icon={<RefreshCw size={14} />} onClick={fetchData} disabled={loadingData}>
-               Refresh
+               {t('market.btn.refresh')}
              </Button>
           </div>
        </div>
@@ -151,15 +153,15 @@ export const MarketAnalysis: React.FC = () => {
           <div className="w-full lg:w-96 border-l border-slate-800 bg-slate-900 p-6 flex flex-col gap-6 overflow-y-auto z-20 shadow-2xl">
              <div>
                 <h3 className="text-sm font-bold text-slate-100 mb-4 flex items-center gap-2">
-                   <BarChart2 size={16} className="text-cyan-400" /> Market Depth & Stats
+                   <BarChart2 size={16} className="text-cyan-400" /> {t('market.depth_stats')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                    <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                      <div className="text-[10px] text-slate-500 mb-1">High (24h)</div>
+                      <div className="text-[10px] text-slate-500 mb-1">{t('market.high_24h')}</div>
                       <div className="text-sm font-mono text-slate-200">${Math.max(...data.map(d => d.high), 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
                    </div>
                    <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                      <div className="text-[10px] text-slate-500 mb-1">Low (24h)</div>
+                      <div className="text-[10px] text-slate-500 mb-1">{t('market.low_24h')}</div>
                       <div className="text-sm font-mono text-slate-200">${Math.min(...data.map(d => d.low), 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
                    </div>
                 </div>
@@ -168,7 +170,7 @@ export const MarketAnalysis: React.FC = () => {
              <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-800 to-slate-800/50 rounded-xl p-1 border border-slate-700/50 shadow-lg">
                 <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                      <BrainCircuit size={16} className="text-purple-400" /> Gemini Analyst
+                      <BrainCircuit size={16} className="text-purple-400" /> {t('market.gemini_analyst')}
                    </h3>
                 </div>
                 
@@ -176,13 +178,13 @@ export const MarketAnalysis: React.FC = () => {
                    {isAnalyzing ? (
                       <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-500 animate-in fade-in">
                          <Loader2 size={32} className="text-purple-500 animate-spin" />
-                         <span className="text-xs font-medium">Processing market structure...</span>
+                         <span className="text-xs font-medium">{t('market.analyzing')}</span>
                       </div>
                    ) : aiAnalysis ? (
                       <div className="prose prose-invert prose-sm animate-in slide-in-from-bottom-2 fade-in duration-500">
                          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{aiAnalysis}</p>
                          <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center gap-2 text-xs text-slate-500">
-                            <Activity size={12} /> Analysis generated based on recent price action.
+                            <Activity size={12} /> {t('market.analysis_generated')}
                          </div>
                       </div>
                    ) : (
@@ -191,7 +193,7 @@ export const MarketAnalysis: React.FC = () => {
                             <TrendingUp size={24} className="opacity-50"/>
                          </div>
                          <p className="text-xs text-center max-w-[200px]">
-                            Click "Analyze" to generate an instant technical summary using AI.
+                            {t('market.click_analyze')}
                          </p>
                       </div>
                    )}
@@ -204,7 +206,7 @@ export const MarketAnalysis: React.FC = () => {
                      isLoading={isAnalyzing}
                      icon={<BrainCircuit size={16} />}
                    >
-                     {aiAnalysis ? 'Update Analysis' : 'Analyze Market Data'}
+                     {aiAnalysis ? t('market.btn.update_analysis') : t('market.btn.analyze')}
                    </Button>
                 </div>
              </div>

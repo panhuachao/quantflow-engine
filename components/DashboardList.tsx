@@ -3,6 +3,7 @@ import { DashboardMeta } from '../types';
 import { Button } from './ui/Button';
 import { Plus, LayoutGrid, BarChart3, Clock, MoreVertical, ExternalLink, Loader2 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface DashboardListProps {
   onSelect: (dashboard: DashboardMeta) => void;
@@ -12,6 +13,7 @@ interface DashboardListProps {
 export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate }) => {
   const [dashboards, setDashboards] = useState<DashboardMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -30,11 +32,11 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
          
          <div className="flex items-center justify-between">
             <div>
-               <h2 className="text-3xl font-bold text-slate-100">Data Dashboards</h2>
-               <p className="text-slate-400 mt-1">Visualize performance, risk, and market data.</p>
+               <h2 className="text-3xl font-bold text-slate-100">{t('dashboard.title')}</h2>
+               <p className="text-slate-400 mt-1">{t('dashboard.desc')}</p>
             </div>
             <Button onClick={onCreate} icon={<Plus size={18}/>}>
-              New Dashboard
+              {t('dashboard.new')}
             </Button>
          </div>
 
@@ -64,7 +66,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-800/50 text-xs text-slate-400">
                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1.5"><LayoutGrid size={12}/> {dash.widgetCount} Widgets</span>
+                          <span className="flex items-center gap-1.5"><LayoutGrid size={12}/> {dash.widgetCount} {t('dashboard.widgets')}</span>
                           <span className="flex items-center gap-1.5"><Clock size={12}/> {dash.updatedAt}</span>
                        </div>
                        <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -81,7 +83,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-4 group-hover:bg-cyan-500/10">
                   <Plus size={24} />
                </div>
-               <span className="font-semibold">Create New Dashboard</span>
+               <span className="font-semibold">{t('dashboard.create_card')}</span>
             </div>
          </div>
 

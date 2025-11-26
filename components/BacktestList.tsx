@@ -3,6 +3,7 @@ import { BacktestReport } from '../types';
 import { Button } from './ui/Button';
 import { Search, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import { backtestService } from '../services/backtestService';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface BacktestListProps {
   onSelect: (report: BacktestReport) => void;
@@ -11,6 +12,7 @@ interface BacktestListProps {
 export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
   const [reports, setReports] = useState<BacktestReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -28,14 +30,14 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-slate-100">Backtest Evaluation</h2>
-            <p className="text-slate-400 mt-1">Review performance reports from your automated strategy tests.</p>
+            <h2 className="text-3xl font-bold text-slate-100">{t('backtest.title')}</h2>
+            <p className="text-slate-400 mt-1">{t('backtest.desc')}</p>
           </div>
           <div className="relative group">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-500 transition-colors" size={18} />
                <input 
                  type="text" 
-                 placeholder="Search reports..." 
+                 placeholder={t('backtest.search')}
                  className="bg-slate-900/50 border border-slate-700 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 text-slate-200"
                />
             </div>
@@ -45,13 +47,13 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium">Strategy / Symbol</th>
-                <th className="p-4 font-medium">Date Range</th>
-                <th className="p-4 font-medium text-right">Return</th>
-                <th className="p-4 font-medium text-right">Sharpe</th>
-                <th className="p-4 font-medium text-right">Max DD</th>
-                <th className="p-4 font-medium">Created</th>
+                <th className="p-4 font-medium">{t('backtest.col.status')}</th>
+                <th className="p-4 font-medium">{t('backtest.col.strategy')}</th>
+                <th className="p-4 font-medium">{t('backtest.col.date_range')}</th>
+                <th className="p-4 font-medium text-right">{t('backtest.col.return')}</th>
+                <th className="p-4 font-medium text-right">{t('backtest.col.sharpe')}</th>
+                <th className="p-4 font-medium text-right">{t('backtest.col.max_dd')}</th>
+                <th className="p-4 font-medium">{t('backtest.col.created')}</th>
                 <th className="p-4"></th>
               </tr>
             </thead>
@@ -65,15 +67,15 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
                   <td className="p-4">
                     {report.status === 'completed' ? (
                        <div className="flex items-center gap-2 text-green-400 bg-green-900/10 px-2 py-1 rounded-full w-fit">
-                         <CheckCircle size={14} /> <span className="text-xs font-bold">Success</span>
+                         <CheckCircle size={14} /> <span className="text-xs font-bold">{t('backtest.status.success')}</span>
                        </div>
                     ) : report.status === 'failed' ? (
                        <div className="flex items-center gap-2 text-red-400 bg-red-900/10 px-2 py-1 rounded-full w-fit">
-                         <XCircle size={14} /> <span className="text-xs font-bold">Failed</span>
+                         <XCircle size={14} /> <span className="text-xs font-bold">{t('backtest.status.failed')}</span>
                        </div>
                     ) : (
                        <div className="flex items-center gap-2 text-yellow-400 bg-yellow-900/10 px-2 py-1 rounded-full w-fit">
-                         <Clock size={14} className="animate-spin" /> <span className="text-xs font-bold">Running</span>
+                         <Clock size={14} className="animate-spin" /> <span className="text-xs font-bold">{t('backtest.status.running')}</span>
                        </div>
                     )}
                   </td>
@@ -100,7 +102,7 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
                   </td>
                   <td className="p-4 text-right">
                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100">
-                       View Report
+                       {t('backtest.btn.view')}
                      </Button>
                   </td>
                 </tr>

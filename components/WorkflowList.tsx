@@ -3,6 +3,7 @@ import { WorkflowMeta } from '../types';
 import { Button } from './ui/Button';
 import { Plus, Search, MoreHorizontal, Edit, Clock, GitBranch, Activity, Loader2 } from 'lucide-react';
 import { workflowService } from '../services/workflowService';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface WorkflowListProps {
   onSelect: (workflow: WorkflowMeta) => void;
@@ -12,6 +13,7 @@ interface WorkflowListProps {
 export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }) => {
   const [workflows, setWorkflows] = useState<WorkflowMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchWorkflows = async () => {
@@ -39,20 +41,20 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-slate-100">Strategies & Workflows</h2>
-            <p className="text-slate-400 mt-1">Manage and deploy your quantitative trading logic.</p>
+            <h2 className="text-3xl font-bold text-slate-100">{t('workflow.title')}</h2>
+            <p className="text-slate-400 mt-1">{t('workflow.desc')}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative group">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-500 transition-colors" size={18} />
                <input 
                  type="text" 
-                 placeholder="Search workflows..." 
+                 placeholder={t('workflow.search')}
                  className="bg-slate-900/50 border border-slate-700 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 text-slate-200"
                />
             </div>
             <Button onClick={onCreate} icon={<Plus size={18}/>}>
-              New Strategy
+              {t('workflow.new')}
             </Button>
           </div>
         </div>
@@ -80,7 +82,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                        workflow.status === 'draft' ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400' :
                        'border-slate-600 bg-slate-700 text-slate-400'
                     }`}>
-                      {workflow.status}
+                      {workflow.status === 'active' ? t('workflow.status.active') : t('workflow.status.draft')}
                     </span>
                   </div>
                   <p className="text-slate-500 text-sm line-clamp-1">{workflow.description}</p>
@@ -88,11 +90,11 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                   <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
                     <div className="flex items-center gap-1.5">
                        <Clock size={12} />
-                       Updated {workflow.updatedAt}
+                       {t('workflow.updated')} {workflow.updatedAt}
                     </div>
                     <div className="flex items-center gap-1.5">
                        <Activity size={12} />
-                       {workflow.nodesCount} Nodes
+                       {workflow.nodesCount} {t('workflow.nodes')}
                     </div>
                   </div>
                 </div>
@@ -106,7 +108,7 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({ onSelect, onCreate }
                    onClick={(e) => { e.stopPropagation(); onSelect(workflow); }}
                  >
                    <Edit size={14} className="mr-2" />
-                   Configure
+                   {t('workflow.btn.configure')}
                  </Button>
                  <Button 
                    variant="ghost" 

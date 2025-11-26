@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Outlet, useParams, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
@@ -14,21 +14,27 @@ import { workflowService } from './services/workflowService';
 import { strategyService } from './services/strategyService';
 import { backtestService } from './services/backtestService';
 import { Workflow, StrategyItem, BacktestReport, NodeData, Connection } from './types';
+import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
+  const { t, language, setLanguage } = useTranslation();
 
   const isActive = (route: string) => path.startsWith(route);
 
   const getTitle = () => {
-    if (path.startsWith('/workflows')) return 'Workflow Orchestrator';
-    if (path.startsWith('/strategies')) return 'Algorithm Library';
-    if (path.startsWith('/backtests')) return 'Backtest Evaluations';
-    if (path.startsWith('/dashboards')) return 'Dashboard Library';
-    if (path.startsWith('/market')) return 'Market Analysis';
-    return 'QuantFlow AI';
+    if (path.startsWith('/workflows')) return t('header.title.workflows');
+    if (path.startsWith('/strategies')) return t('header.title.algos');
+    if (path.startsWith('/backtests')) return t('header.title.evals');
+    if (path.startsWith('/dashboards')) return t('header.title.dash');
+    if (path.startsWith('/market')) return t('header.title.market');
+    return t('header.title.default');
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'zh' ? 'en' : 'zh');
   };
 
   return (
@@ -43,15 +49,24 @@ const Layout = () => {
         </div>
 
         <nav className="flex-1 flex flex-col gap-4 w-full px-2">
-          <SidebarItem icon={<WorkflowIcon size={24} />} active={isActive('/workflows')} onClick={() => navigate('/workflows')} label="Workflows" />
-          <SidebarItem icon={<Code2 size={24} />} active={isActive('/strategies')} onClick={() => navigate('/strategies')} label="Algos" />
-          <SidebarItem icon={<ClipboardList size={24} />} active={isActive('/backtests')} onClick={() => navigate('/backtests')} label="Evals" />
-          <SidebarItem icon={<LayoutDashboard size={24} />} active={isActive('/dashboards')} onClick={() => navigate('/dashboards')} label="Dash" />
-          <SidebarItem icon={<LineChart size={24} />} active={isActive('/market')} onClick={() => navigate('/market')} label="Market" />
+          <SidebarItem icon={<WorkflowIcon size={24} />} active={isActive('/workflows')} onClick={() => navigate('/workflows')} label={t('nav.workflows')} />
+          <SidebarItem icon={<Code2 size={24} />} active={isActive('/strategies')} onClick={() => navigate('/strategies')} label={t('nav.algos')} />
+          <SidebarItem icon={<ClipboardList size={24} />} active={isActive('/backtests')} onClick={() => navigate('/backtests')} label={t('nav.evals')} />
+          <SidebarItem icon={<LayoutDashboard size={24} />} active={isActive('/dashboards')} onClick={() => navigate('/dashboards')} label={t('nav.dash')} />
+          <SidebarItem icon={<LineChart size={24} />} active={isActive('/market')} onClick={() => navigate('/market')} label={t('nav.market')} />
         </nav>
 
         <div className="mt-auto flex flex-col gap-4 w-full px-2">
-           <SidebarItem icon={<Settings size={24} />} label="Settings" />
+           <button 
+             onClick={toggleLanguage}
+             className="w-full aspect-square flex flex-col items-center justify-center gap-1 rounded-lg text-slate-500 hover:bg-slate-800 hover:text-cyan-400 transition-all"
+             title={language === 'zh' ? 'Switch to English' : '切换中文'}
+           >
+              <Globe size={20} />
+              <span className="text-[10px] font-bold uppercase">{language}</span>
+           </button>
+           
+           <SidebarItem icon={<Settings size={24} />} label={t('nav.settings')} />
            <div className="w-10 h-10 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer">
               <User size={20} />
            </div>
@@ -65,13 +80,13 @@ const Layout = () => {
             <div className="h-4 w-px bg-slate-700 mx-2" />
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700/50">
               <div className="w-2 h-2 rounded-full bg-green-500 shadow-lg shadow-green-500/50 animate-pulse" />
-              <span className="text-xs font-medium text-green-400">System Operational</span>
+              <span className="text-xs font-medium text-green-400">{t('header.system_operational')}</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-              <input type="text" placeholder="Global search..." className="bg-slate-950 border border-slate-800 text-sm rounded-full pl-10 pr-4 py-1.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 transition-all" />
+              <input type="text" placeholder={t('header.search_placeholder')} className="bg-slate-950 border border-slate-800 text-sm rounded-full pl-10 pr-4 py-1.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 transition-all" />
             </div>
             <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
               <Bell size={20} />
@@ -91,7 +106,7 @@ const SidebarItem = ({ icon, active, onClick, label }: any) => (
   <button onClick={onClick} className={`w-full aspect-square flex flex-col items-center justify-center gap-1 rounded-lg transition-all duration-200 group relative ${active ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-200'}`}>
     {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyan-500 rounded-r-full shadow-[0_0_10px_rgba(34,211,238,0.5)]" />}
     {icon}
-    <span className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-1">{label}</span>
+    <span className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-1 truncate w-full px-1">{label}</span>
   </button>
 );
 
@@ -209,27 +224,29 @@ export default function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/workflows" replace />} />
-        <Route path="workflows">
-           <Route index element={<WorkflowList onSelect={(wf) => navigate(`/workflows/${wf.id}`)} onCreate={handleCreateWorkflow} />} />
-           <Route path=":id" element={<WorkflowEditorPage />} />
+    <LanguageProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/workflows" replace />} />
+          <Route path="workflows">
+             <Route index element={<WorkflowList onSelect={(wf) => navigate(`/workflows/${wf.id}`)} onCreate={handleCreateWorkflow} />} />
+             <Route path=":id" element={<WorkflowEditorPage />} />
+          </Route>
+          <Route path="strategies">
+             <Route index element={<StrategyList onSelect={(s) => navigate(`/strategies/${s.id}`)} onCreate={handleCreateStrategy} />} />
+             <Route path=":id" element={<StrategyEditorPage />} />
+          </Route>
+          <Route path="backtests">
+             <Route index element={<BacktestList onSelect={(r) => navigate(`/backtests/${r.id}`)} />} />
+             <Route path=":id" element={<BacktestDetailPage />} />
+          </Route>
+          <Route path="dashboards">
+             <Route index element={<DashboardList onSelect={(d) => navigate(`/dashboards/${d.id}`)} onCreate={() => {}} />} />
+             <Route path=":id" element={<DashboardPage />} />
+          </Route>
+          <Route path="market" element={<MarketAnalysis />} />
         </Route>
-        <Route path="strategies">
-           <Route index element={<StrategyList onSelect={(s) => navigate(`/strategies/${s.id}`)} onCreate={handleCreateStrategy} />} />
-           <Route path=":id" element={<StrategyEditorPage />} />
-        </Route>
-        <Route path="backtests">
-           <Route index element={<BacktestList onSelect={(r) => navigate(`/backtests/${r.id}`)} />} />
-           <Route path=":id" element={<BacktestDetailPage />} />
-        </Route>
-        <Route path="dashboards">
-           <Route index element={<DashboardList onSelect={(d) => navigate(`/dashboards/${d.id}`)} onCreate={() => {}} />} />
-           <Route path=":id" element={<DashboardPage />} />
-        </Route>
-        <Route path="market" element={<MarketAnalysis />} />
-      </Route>
-    </Routes>
+      </Routes>
+    </LanguageProvider>
   );
 }
