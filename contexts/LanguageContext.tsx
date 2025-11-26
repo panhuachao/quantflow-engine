@@ -57,6 +57,10 @@ const translations = {
     'settings.api_keys': 'API 密钥管理',
     'settings.security': '安全设置',
     'settings.theme': '界面主题',
+    'settings.theme.dark': '深色模式 (默认)',
+    'settings.theme.light': '浅色模式',
+    'settings.theme.midnight': '午夜极黑',
+    'settings.theme.cosmic': '深空紫',
     'settings.language': '系统语言',
     'settings.save': '保存设置',
 
@@ -274,6 +278,10 @@ const translations = {
     'settings.api_keys': 'API Keys',
     'settings.security': 'Security',
     'settings.theme': 'Theme',
+    'settings.theme.dark': 'Dark (Default)',
+    'settings.theme.light': 'Light',
+    'settings.theme.midnight': 'Midnight',
+    'settings.theme.cosmic': 'Cosmic Purple',
     'settings.language': 'Language',
     'settings.save': 'Save Settings',
 

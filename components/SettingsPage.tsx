@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
-import { Settings, Bell, Key, Shield, Globe, Moon, Save } from 'lucide-react';
+import { useTheme, Theme } from '../contexts/ThemeContext';
+import { Settings, Bell, Key, Shield, Globe, Moon, Save, Sun, Cloud, Sparkles } from 'lucide-react';
 import { Button } from './ui/Button';
 
 const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
@@ -12,8 +13,29 @@ const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void 
   </button>
 );
 
+const ThemeCard = ({ themeId, currentTheme, onClick, label, icon: Icon, colors }: { themeId: Theme, currentTheme: Theme, onClick: () => void, label: string, icon: any, colors: string }) => (
+  <div 
+    onClick={onClick}
+    className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center gap-2 transition-all ${currentTheme === themeId ? 'bg-cyan-500/10 border-cyan-500 ring-1 ring-cyan-500' : 'bg-slate-900 border-slate-700 hover:border-slate-500'}`}
+  >
+    <div className={`w-full h-12 rounded flex overflow-hidden border border-slate-600 ${colors}`}>
+       {/* Mock Interface Preview */}
+       <div className="w-1/4 h-full opacity-80 bg-current"></div>
+       <div className="flex-1 h-full bg-white/10 p-1">
+          <div className="w-1/2 h-1 bg-white/40 rounded mb-1"></div>
+          <div className="w-3/4 h-1 bg-white/20 rounded"></div>
+       </div>
+    </div>
+    <div className="flex items-center gap-2">
+       <Icon size={14} className={currentTheme === themeId ? 'text-cyan-400' : 'text-slate-400'} />
+       <span className={`text-xs font-medium ${currentTheme === themeId ? 'text-cyan-100' : 'text-slate-400'}`}>{label}</span>
+    </div>
+  </div>
+);
+
 export const SettingsPage: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(false);
 
@@ -52,7 +74,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="font-semibold text-slate-200">System Preferences</h3>
            </div>
            <div className="p-6 space-y-6">
-               <div className="flex items-center justify-between">
+               <div className="flex items-center justify-between border-b border-slate-800/50 pb-4">
                   <div>
                      <div className="text-sm text-white font-medium mb-1">{t('settings.language')}</div>
                      <div className="text-xs text-slate-500">Select your preferred interface language.</div>
@@ -73,13 +95,34 @@ export const SettingsPage: React.FC = () => {
                   </div>
                </div>
                
-               <div className="flex items-center justify-between">
-                  <div>
-                     <div className="text-sm text-white font-medium mb-1">{t('settings.theme')}</div>
-                     <div className="text-xs text-slate-500">Dark mode is enabled by default.</div>
+               <div>
+                  <div className="flex items-center justify-between mb-3">
+                     <div>
+                        <div className="text-sm text-white font-medium mb-1">{t('settings.theme')}</div>
+                        <div className="text-xs text-slate-500">Customize the application appearance.</div>
+                     </div>
                   </div>
-                  <div className="opacity-50 cursor-not-allowed">
-                     <Moon size={20} className="text-purple-400"/>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                     <ThemeCard 
+                       themeId="dark" currentTheme={theme} onClick={() => setTheme('dark')} 
+                       label={t('settings.theme.dark')} icon={Moon} 
+                       colors="bg-slate-950 text-slate-200"
+                     />
+                     <ThemeCard 
+                       themeId="light" currentTheme={theme} onClick={() => setTheme('light')} 
+                       label={t('settings.theme.light')} icon={Sun} 
+                       colors="bg-gray-100 text-slate-800"
+                     />
+                     <ThemeCard 
+                       themeId="midnight" currentTheme={theme} onClick={() => setTheme('midnight')} 
+                       label={t('settings.theme.midnight')} icon={Cloud} 
+                       colors="bg-black text-gray-300"
+                     />
+                     <ThemeCard 
+                       themeId="cosmic" currentTheme={theme} onClick={() => setTheme('cosmic')} 
+                       label={t('settings.theme.cosmic')} icon={Sparkles} 
+                       colors="bg-indigo-950 text-indigo-200"
+                     />
                   </div>
                </div>
            </div>
