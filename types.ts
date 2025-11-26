@@ -5,7 +5,7 @@ export enum NodeType {
   DATA_COLLECT = 'DATA_COLLECT', // Kept for backward compat or generic data
   TRANSFORM = 'TRANSFORM',
   SCRIPT = 'SCRIPT',             // Code Node
-  STRATEGY = 'STRATEGY',
+  LLM = 'LLM',                   // Large Language Model Node (formerly STRATEGY)
   FILTER = 'FILTER',
   EXECUTION = 'EXECUTION',
   STORAGE = 'STORAGE',            

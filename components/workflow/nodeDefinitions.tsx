@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 import { NodeType, NodeDefinition, ExecutionContext, ExecutionResult } from '../../types';
 import { 
   Clock, Search, Globe, FileCode, TrendingUp, Save, 
-  Database, Filter, PlayCircle, MoreHorizontal, DownloadCloud, Code, Wand2 
+  Database, Filter, PlayCircle, MoreHorizontal, DownloadCloud, Code, BrainCircuit, Sparkles 
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { generateStrategyCode } from '../../services/geminiService';
 
 // --- Helper Components for Config ---
 
@@ -23,7 +22,7 @@ const ConfigInput = ({ label, value, onChange, placeholder, type = "text" }: any
   </div>
 );
 
-const ConfigTextArea = ({ label, value, onChange, placeholder, height = "h-32" }: any) => (
+const ConfigTextArea = ({ label, value, onChange, placeholder, height = "h-32", helpText }: any) => (
   <div className="mb-4">
     <label className="block text-xs text-slate-400 mb-2">{label}</label>
     <textarea
@@ -32,6 +31,7 @@ const ConfigTextArea = ({ label, value, onChange, placeholder, height = "h-32" }
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
     />
+    {helpText && <div className="text-[10px] text-slate-500 mt-1">{helpText}</div>}
   </div>
 );
 
@@ -47,6 +47,22 @@ const ConfigSelect = ({ label, value, onChange, options }: any) => (
         <option key={opt.value} value={opt.value}>{opt.label}</option>
       ))}
     </select>
+  </div>
+);
+
+const ConfigSlider = ({ label, value, onChange, min, max, step }: any) => (
+  <div className="mb-4">
+    <div className="flex justify-between items-center mb-2">
+       <label className="block text-xs text-slate-400">{label}</label>
+       <span className="text-xs font-mono text-cyan-400">{value}</span>
+    </div>
+    <input
+      type="range"
+      className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+      min={min} max={max} step={step}
+      value={value || min}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+    />
   </div>
 );
 
@@ -272,67 +288,124 @@ const ScriptNode: NodeDefinition = {
   }
 };
 
-// --- 5. STRATEGY NODE ---
+// --- 5. LLM / STRATEGY NODE ---
 
-const StrategyNode: NodeDefinition = {
-  type: NodeType.STRATEGY,
-  label: 'Strategy',
-  icon: TrendingUp,
+const LLMNode: NodeDefinition = {
+  type: NodeType.LLM,
+  label: 'LLM Strategy',
+  icon: BrainCircuit,
   color: 'border-purple-500 shadow-purple-500/20',
   iconColor: 'text-purple-400',
-  description: 'AI-assisted quantitative strategy logic.',
+  description: 'AI-powered processing using DeepSeek, GPT-4, etc.',
 
   ConfigComponent: ({ config, onUpdate }) => {
-    const [prompt, setPrompt] = useState(config.description || '');
-    const [loading, setLoading] = useState(false);
-
-    const handleGen = async () => {
-      setLoading(true);
-      const code = await generateStrategyCode(prompt);
-      onUpdate('parameters', code);
-      onUpdate('description', prompt);
-      setLoading(false);
-    };
-
     return (
       <div>
         <div className="flex items-center gap-2 text-purple-400 mb-4">
-          <Wand2 size={16} />
-          <span className="text-sm font-semibold">AI Strategy Generator</span>
+          <Sparkles size={16} />
+          <span className="text-sm font-semibold">Large Model Config</span>
         </div>
+        
+        <ConfigSelect 
+          label="Model Provider"
+          value={config.provider || 'DeepSeek'}
+          onChange={(v: string) => onUpdate('provider', v)}
+          options={[
+            { label: 'DeepSeek', value: 'DeepSeek' },
+            { label: 'OpenAI (ChatGPT)', value: 'OpenAI' },
+            { label: 'Google Gemini', value: 'Gemini' },
+            { label: 'Anthropic Claude', value: 'Anthropic' },
+          ]}
+        />
+
+        <ConfigInput 
+           label="Model Name"
+           value={config.model}
+           onChange={(v: string) => onUpdate('model', v)}
+           placeholder="e.g. deepseek-chat, gpt-4o, gemini-pro"
+        />
+
+        <ConfigInput 
+           label="API Key (Optional override)"
+           type="password"
+           value={config.apiKey}
+           onChange={(v: string) => onUpdate('apiKey', v)}
+           placeholder="sk-..."
+        />
+
+        <ConfigSlider 
+          label="Temperature"
+          value={config.temperature !== undefined ? config.temperature : 0.7}
+          min={0} max={1} step={0.1}
+          onChange={(v: number) => onUpdate('temperature', v)}
+        />
+
         <ConfigTextArea 
-          label="Strategy Description" 
-          value={prompt} 
-          onChange={setPrompt} 
-          placeholder="Buy when RSI < 30..." 
+          label="System Instruction" 
+          value={config.systemPrompt} 
+          onChange={(v: string) => onUpdate('systemPrompt', v)} 
+          placeholder="You are an expert quantitative trader..." 
           height="h-24"
         />
-        <Button onClick={handleGen} isLoading={loading} className="w-full mb-4">Generate Logic</Button>
-        {config.parameters && (
-          <div className="bg-slate-950 p-2 rounded border border-slate-800">
-             <div className="text-xs text-slate-500 mb-1">Generated Python:</div>
-             <pre className="text-[10px] text-green-400 font-mono overflow-x-auto">{config.parameters}</pre>
-          </div>
-        )}
+
+        <ConfigTextArea 
+          label="User Prompt" 
+          value={config.userPrompt} 
+          onChange={(v: string) => onUpdate('userPrompt', v)} 
+          placeholder="Analyze the following market data: {{inputs}}" 
+          height="h-32"
+          helpText="Use {{inputs}} to inject data from previous nodes."
+        />
       </div>
     );
   },
 
   PreviewComponent: ({ config }) => (
     <div className="mt-2 pt-2 border-t border-slate-700/50">
-      <div className="text-[10px] text-slate-400 italic truncate">
-        {config.description ? `"${config.description}"` : 'No description'}
+       <div className="flex justify-between items-center mb-1">
+          <span className="text-[9px] text-slate-500 uppercase font-semibold">Model</span>
+          <span className="text-[9px] text-purple-300 bg-purple-900/30 px-1 rounded">{config.provider || 'AI'}</span>
+       </div>
+       <div className="text-[10px] text-slate-400 font-mono truncate">{config.model || 'default-model'}</div>
+       <div className="text-[9px] text-slate-500 mt-1 italic truncate opacity-75">
+        "{config.userPrompt || 'No prompt'}"
       </div>
     </div>
   ),
 
-  execute: async ({ inputs, log }) => {
-    log(`Initializing Backtrader engine...`);
-    log(`Analyzing ${inputs.length} data points...`, 'info');
-    await new Promise(r => setTimeout(r, 1000));
-    const action = Math.random() > 0.5 ? 'BUY' : 'SELL';
-    log(`Signal Generated: ${action}`, action === 'BUY' ? 'success' : 'warn');
-    return { output: { signal: action, confidence: 0.85 }, status: 'success' };
+  execute: async ({ config, inputs, log }) => {
+    const provider = config.provider || 'DeepSeek';
+    const model = config.model || 'default';
+    
+    log(`Initializing ${provider} client (${model})...`);
+    
+    // Construct Prompt
+    let prompt = config.userPrompt || '';
+    if (inputs && inputs.length > 0) {
+       // Simple injection simulation
+       const dataStr = JSON.stringify(inputs).substring(0, 500) + '...'; // Truncate for log
+       prompt = prompt.replace('{{inputs}}', JSON.stringify(inputs));
+       log(`Context injected: ${inputs.length} records.`);
+    }
+
+    log(`Sending request to ${provider} API...`, 'info');
+    
+    // Simulate API Call Latency
+    await new Promise(r => setTimeout(r, 1500));
+    
+    const responseText = `[${provider}] Analysis Result: Based on the provided data, the trend appears bullish with a confidence of 85%. Recommended action: BUY.`;
+    
+    log(`Received response from model.`, 'success');
+    
+    return { 
+      output: { 
+        provider, 
+        model, 
+        response: responseText, 
+        raw: { choices: [{ message: { content: responseText } }] } 
+      }, 
+      status: 'success' 
+    };
   }
 };
 
@@ -399,7 +472,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
   [NodeType.DATABASE_QUERY]: DatabaseQueryNode,
   [NodeType.HTTP_REQUEST]: HttpRequestNode,
   [NodeType.SCRIPT]: ScriptNode,
-  [NodeType.STRATEGY]: StrategyNode,
+  [NodeType.LLM]: LLMNode,
   [NodeType.STORAGE]: StorageNode,
   // Map others to default or implement later as needed
   [NodeType.EXECUTION]: { ...DefaultNode, type: NodeType.EXECUTION, label: 'Execution', icon: PlayCircle, color: 'border-green-500' },

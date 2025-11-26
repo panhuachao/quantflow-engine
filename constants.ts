@@ -1,7 +1,3 @@
-
-
-
-
 import { NodeType, WidgetType, DataSourceType, Workflow, DashboardMeta, StrategyItem, BacktestReport } from './types';
 
 // Standalone defaults (kept for fallback)
@@ -26,11 +22,11 @@ export const INITIAL_NODES = [
   },
   {
     id: '3',
-    type: NodeType.STRATEGY,
-    label: 'MA Crossover',
+    type: NodeType.LLM,
+    label: 'Market Analysis AI',
     x: 700,
     y: 100,
-    config: { fast_ma: 10, slow_ma: 50 },
+    config: { provider: 'DeepSeek', model: 'deepseek-chat', userPrompt: 'Analyze the trend based on this data.' },
     status: 'running'
   },
   {
@@ -55,7 +51,7 @@ export const NODE_COLORS = {
   [NodeType.DATA_COLLECT]: 'border-orange-500 shadow-orange-500/20',
   [NodeType.TRANSFORM]: 'border-yellow-500 shadow-yellow-500/20',
   [NodeType.SCRIPT]: 'border-pink-500 shadow-pink-500/20',
-  [NodeType.STRATEGY]: 'border-purple-500 shadow-purple-500/20',
+  [NodeType.LLM]: 'border-purple-500 shadow-purple-500/20',
   [NodeType.FILTER]: 'border-rose-500 shadow-rose-500/20',
   [NodeType.EXECUTION]: 'border-green-500 shadow-green-500/20',
   [NodeType.STORAGE]: 'border-indigo-500 shadow-indigo-500/20',
@@ -69,7 +65,7 @@ export const NODE_ICONS_COLOR = {
   [NodeType.DATA_COLLECT]: 'text-orange-400',
   [NodeType.TRANSFORM]: 'text-yellow-400',
   [NodeType.SCRIPT]: 'text-pink-400',
-  [NodeType.STRATEGY]: 'text-purple-400',
+  [NodeType.LLM]: 'text-purple-400',
   [NodeType.FILTER]: 'text-rose-400',
   [NodeType.EXECUTION]: 'text-green-400',
   [NodeType.STORAGE]: 'text-indigo-400',
@@ -173,7 +169,7 @@ export const MOCK_WORKFLOWS_LIST: Workflow[] = [
     updatedAt: '2023-10-15 14:30',
     nodes: [
         { id: '1', type: NodeType.DATA_COLLECT, label: 'AkShare: SPY', x: 100, y: 150, config: { source: 'AkShare', symbol: 'SPY' } },
-        { id: '2', type: NodeType.STRATEGY, label: 'SMA Cross', x: 450, y: 150, config: { fast: 10, slow: 50, description: 'Golden Cross Logic' } },
+        { id: '2', type: NodeType.LLM, label: 'AI Signal Gen', x: 450, y: 150, config: { provider: 'DeepSeek', model: 'deepseek-chat', userPrompt: 'Given the SMA data...' } },
         { id: '3', type: NodeType.EXECUTION, label: 'Paper Trading', x: 800, y: 150, config: {} }
     ],
     connections: [
@@ -207,9 +203,9 @@ export const MOCK_WORKFLOWS_LIST: Workflow[] = [
     updatedAt: '2023-10-14 11:20',
     nodes: [
         { id: '1', type: NodeType.DATA_COLLECT, label: 'News Feed', x: 100, y: 100, config: { source: 'Yahoo', symbol: 'NEWS' } },
-        { id: '2', type: NodeType.SCRIPT, label: 'NLP Score', x: 400, y: 100, config: { code: 'return sentiment(data)' } },
+        { id: '2', type: NodeType.SCRIPT, label: 'Pre-process', x: 400, y: 100, config: { code: 'return clean(data)' } },
         { id: '3', type: NodeType.STORAGE, label: 'Log Sentiment', x: 400, y: 300, config: { dbType: 'Postgres' } },
-        { id: '4', type: NodeType.STRATEGY, label: 'Long/Short', x: 700, y: 100, config: {} }
+        { id: '4', type: NodeType.LLM, label: 'GPT Sentiment', x: 700, y: 100, config: { provider: 'OpenAI', model: 'gpt-4o' } }
     ],
     connections: [
         { id: 'c1', sourceId: '1', targetId: '2' },

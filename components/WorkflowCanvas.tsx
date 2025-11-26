@@ -238,7 +238,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
       NodeType.DATABASE_QUERY, 
       NodeType.HTTP_REQUEST, 
       NodeType.SCRIPT, 
-      NodeType.STRATEGY, 
+      NodeType.LLM, 
       NodeType.STORAGE
   ];
 
@@ -356,4 +356,4 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
       </div>
     </div>
   );
-};
+}

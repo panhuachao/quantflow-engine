@@ -45,11 +45,13 @@ export const ScriptContent = ({ config }: { config: any }) => (
   </div>
 );
 
-export const StrategyContent = ({ config }: { config: any }) => (
+export const LLMContent = ({ config }: { config: any }) => (
   <div className="mt-2 pt-2 border-t border-slate-700/50">
-    <div className="text-[10px] text-slate-400 italic truncate">
-      {config.description ? `"${config.description}"` : 'No description'}
+    <div className="flex justify-between items-center mb-1">
+       <span className="text-[9px] text-slate-500 uppercase font-semibold">Model</span>
+       <span className="text-[9px] text-purple-300 bg-purple-900/30 px-1 rounded">{config.provider || 'AI'}</span>
     </div>
+    <div className="text-[10px] text-slate-400 font-mono truncate">{config.model || 'default'}</div>
   </div>
 );
 
@@ -76,7 +78,7 @@ export const NODE_CONTENT_REGISTRY: Record<string, React.FC<{ config: any }>> = 
   [NodeType.TIMER]: TimerContent,
   [NodeType.STORAGE]: StorageContent,
   [NodeType.SCRIPT]: ScriptContent,
-  [NodeType.STRATEGY]: StrategyContent,
+  [NodeType.LLM]: LLMContent,
   [NodeType.DATABASE_QUERY]: DatabaseQueryContent,
   [NodeType.HTTP_REQUEST]: HttpRequestContent,
 };
