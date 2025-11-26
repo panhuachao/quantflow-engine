@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation, Outlet, useParams, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe, Database } from 'lucide-react';
+import { LayoutDashboard, Workflow as WorkflowIcon, LineChart, Settings, Bell, Search, User, Code2, ClipboardList, Loader2, Globe, Database, LogOut, Check } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { WorkflowCanvas } from './components/WorkflowCanvas';
 import { WorkflowList } from './components/WorkflowList';
@@ -11,6 +11,9 @@ import { BacktestList } from './components/BacktestList';
 import { BacktestDetail } from './components/BacktestDetail';
 import { MarketAnalysis } from './components/MarketAnalysis';
 import { DataSourceList } from './components/DataSourceList';
+import { LoginPage } from './components/LoginPage';
+import { ProfilePage } from './components/ProfilePage';
+import { SettingsPage } from './components/SettingsPage';
 import { workflowService } from './services/workflowService';
 import { strategyService } from './services/strategyService';
 import { backtestService } from './services/backtestService';
@@ -22,8 +25,37 @@ const Layout = () => {
   const location = useLocation();
   const path = location.pathname;
   const { t, language, setLanguage } = useTranslation();
+  
+  // Dropdown states
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Mock Notifications
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'Backtest Completed', desc: 'Golden Cross Strategy finished with +8.5%', time: '2m ago', read: false },
+    { id: 2, title: 'System Alert', desc: 'High latency detected on Node #4', time: '1h ago', read: false },
+    { id: 3, title: 'New Market Data', desc: 'Daily close data for SPY available', time: '5h ago', read: true }
+  ]);
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (userRef.current && !userRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const isActive = (route: string) => path.startsWith(route);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const getTitle = () => {
     if (path.startsWith('/workflows')) return t('header.title.workflows');
@@ -32,6 +64,8 @@ const Layout = () => {
     if (path.startsWith('/dashboards')) return t('header.title.dash');
     if (path.startsWith('/market')) return t('header.title.market');
     if (path.startsWith('/datasources')) return t('header.title.datasources');
+    if (path.startsWith('/settings')) return t('header.title.settings');
+    if (path.startsWith('/profile')) return t('header.title.profile');
     return t('header.title.default');
   };
 
@@ -69,9 +103,36 @@ const Layout = () => {
               <span className="text-[10px] font-bold uppercase">{language}</span>
            </button>
            
-           <SidebarItem icon={<Settings size={24} />} label={t('nav.settings')} />
-           <div className="w-10 h-10 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer">
-              <User size={20} />
+           <SidebarItem icon={<Settings size={24} />} active={isActive('/settings')} onClick={() => navigate('/settings')} label={t('nav.settings')} />
+           
+           <div className="relative" ref={userRef}>
+             <div 
+               onClick={() => setShowUserMenu(!showUserMenu)}
+               className="w-10 h-10 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer hover:border-cyan-500/50 transition-colors"
+             >
+                <User size={20} />
+             </div>
+             {showUserMenu && (
+               <div className="absolute left-14 bottom-0 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200">
+                  <div className="p-3 border-b border-slate-800">
+                     <div className="font-bold text-sm text-white">Alex Quant</div>
+                     <div className="text-xs text-slate-500">Admin</div>
+                  </div>
+                  <div className="p-1">
+                     <button onClick={() => { navigate('/profile'); setShowUserMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg flex items-center gap-2">
+                        <User size={14} /> {t('header.title.profile')}
+                     </button>
+                     <button onClick={() => { navigate('/settings'); setShowUserMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg flex items-center gap-2">
+                        <Settings size={14} /> {t('nav.settings')}
+                     </button>
+                  </div>
+                  <div className="p-1 border-t border-slate-800">
+                     <button onClick={() => navigate('/login')} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-slate-800 rounded-lg flex items-center gap-2">
+                        <LogOut size={14} /> {t('header.logout')}
+                     </button>
+                  </div>
+               </div>
+             )}
            </div>
         </div>
       </aside>
@@ -91,10 +152,52 @@ const Layout = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
               <input type="text" placeholder={t('header.search_placeholder')} className="bg-slate-950 border border-slate-800 text-sm rounded-full pl-10 pr-4 py-1.5 focus:ring-2 focus:ring-cyan-500 outline-none w-64 transition-all" />
             </div>
-            <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-900" />
-            </button>
+            
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-slate-800 text-cyan-400' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-900 shadow-sm" />
+                )}
+              </button>
+
+              {showNotifications && (
+                 <div className="absolute right-0 top-12 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between p-3 border-b border-slate-800">
+                       <h3 className="font-semibold text-sm">{t('notif.title')}</h3>
+                       <button 
+                         className="text-[10px] text-cyan-400 hover:underline"
+                         onClick={() => setNotifications(notifications.map(n => ({...n, read: true})))}
+                       >
+                         {t('notif.mark_all_read')}
+                       </button>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto">
+                       {notifications.length === 0 ? (
+                          <div className="p-8 text-center text-xs text-slate-500">{t('notif.empty')}</div>
+                       ) : (
+                          notifications.map(n => (
+                             <div key={n.id} className={`p-3 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors cursor-pointer ${!n.read ? 'bg-slate-800/20' : ''}`}>
+                                <div className="flex justify-between items-start mb-1">
+                                   <div className="text-sm font-medium text-slate-200">{n.title}</div>
+                                   <div className="text-[10px] text-slate-500">{n.time}</div>
+                                </div>
+                                <div className="text-xs text-slate-400 line-clamp-2">{n.desc}</div>
+                                {!n.read && <div className="mt-2 flex items-center gap-1 text-[10px] text-cyan-500"><div className="w-1.5 h-1.5 rounded-full bg-cyan-500"/> Unread</div>}
+                             </div>
+                          ))
+                       )}
+                    </div>
+                    <div className="p-2 text-center border-t border-slate-800">
+                       <button className="text-xs text-slate-500 hover:text-white transition-colors">{t('notif.view_all')}</button>
+                    </div>
+                 </div>
+              )}
+            </div>
           </div>
         </header>
         <div className="flex-1 relative overflow-hidden">
@@ -229,6 +332,10 @@ export default function App() {
   return (
     <LanguageProvider>
       <Routes>
+        {/* Public Route */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/workflows" replace />} />
           <Route path="workflows">
@@ -249,6 +356,8 @@ export default function App() {
           </Route>
           <Route path="market" element={<MarketAnalysis />} />
           <Route path="datasources" element={<DataSourceList />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </LanguageProvider>

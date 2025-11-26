@@ -22,7 +22,43 @@ const translations = {
     'header.title.dash': '数据看板库',
     'header.title.market': '市场行情分析',
     'header.title.datasources': '数据源管理',
+    'header.title.settings': '系统设置',
+    'header.title.profile': '个人中心',
     'header.title.default': 'QuantFlow AI',
+    'header.logout': '退出登录',
+
+    // Notifications
+    'notif.title': '消息中心',
+    'notif.mark_all_read': '全部已读',
+    'notif.empty': '暂无新消息',
+    'notif.view_all': '查看全部',
+
+    // Login
+    'login.welcome': '欢迎回来',
+    'login.subtitle': '登录 QuantFlow AI 量化交易系统',
+    'login.email': '邮箱地址',
+    'login.password': '密码',
+    'login.btn': '登 录',
+    'login.forgot': '忘记密码？',
+    'login.no_account': '还没有账号？',
+    'login.register': '立即注册',
+
+    // Profile
+    'profile.title': '个人资料',
+    'profile.role': '高级量化分析师',
+    'profile.stats.strategies': '策略总数',
+    'profile.stats.backtests': '回测次数',
+    'profile.stats.runtime': '运行时间',
+    'profile.recent_activity': '近期活动',
+
+    // Settings
+    'settings.account': '账号设置',
+    'settings.notifications': '通知偏好',
+    'settings.api_keys': 'API 密钥管理',
+    'settings.security': '安全设置',
+    'settings.theme': '界面主题',
+    'settings.language': '系统语言',
+    'settings.save': '保存设置',
 
     // Workflow List
     'workflow.title': '策略与工作流',
@@ -203,7 +239,43 @@ const translations = {
     'header.title.dash': 'Dashboard Library',
     'header.title.market': 'Market Analysis',
     'header.title.datasources': 'Data Sources',
+    'header.title.settings': 'System Settings',
+    'header.title.profile': 'My Profile',
     'header.title.default': 'QuantFlow AI',
+    'header.logout': 'Logout',
+
+    // Notifications
+    'notif.title': 'Notifications',
+    'notif.mark_all_read': 'Mark all read',
+    'notif.empty': 'No new notifications',
+    'notif.view_all': 'View all',
+
+    // Login
+    'login.welcome': 'Welcome Back',
+    'login.subtitle': 'Sign in to QuantFlow AI',
+    'login.email': 'Email Address',
+    'login.password': 'Password',
+    'login.btn': 'Sign In',
+    'login.forgot': 'Forgot password?',
+    'login.no_account': 'No account?',
+    'login.register': 'Register',
+
+    // Profile
+    'profile.title': 'Profile',
+    'profile.role': 'Senior Quant Analyst',
+    'profile.stats.strategies': 'Total Strategies',
+    'profile.stats.backtests': 'Total Backtests',
+    'profile.stats.runtime': 'Runtime Hours',
+    'profile.recent_activity': 'Recent Activity',
+
+    // Settings
+    'settings.account': 'Account Settings',
+    'settings.notifications': 'Notifications',
+    'settings.api_keys': 'API Keys',
+    'settings.security': 'Security',
+    'settings.theme': 'Theme',
+    'settings.language': 'Language',
+    'settings.save': 'Save Settings',
 
     // Workflow List
     'workflow.title': 'Strategies & Workflows',
