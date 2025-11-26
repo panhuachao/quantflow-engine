@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BacktestReport } from '../types';
 import { Button } from './ui/Button';
@@ -44,8 +45,8 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
   if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-green-500"/></div>;
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-950">
-      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col space-y-8">
+    <div className="p-8 h-full flex flex-col bg-slate-950 overflow-hidden">
+      <div className="max-w-7xl mx-auto w-full h-full flex flex-col gap-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">{t('backtest.title')}</h2>
@@ -63,10 +64,10 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
             </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/20 flex-1 flex flex-col">
-          <div className="overflow-x-auto flex-1">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/20 flex-1 flex flex-col min-h-0">
+          <div className="overflow-x-auto flex-1 overflow-y-auto">
             <table className="w-full text-left border-collapse">
-                <thead>
+                <thead className="sticky top-0 bg-slate-900 z-10 shadow-sm">
                 <tr className="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
                     <th className="p-4 font-medium">{t('backtest.col.status')}</th>
                     <th className="p-4 font-medium">{t('backtest.col.strategy')}</th>
@@ -152,13 +153,15 @@ export const BacktestList: React.FC<BacktestListProps> = ({ onSelect }) => {
           </div>
         </div>
 
-        <Pagination 
-            currentPage={currentPage}
-            totalItems={filteredReports.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-        />
+        <div className="shrink-0">
+            <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredReports.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+            />
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { DashboardMeta } from '../types';
 import { Button } from './ui/Button';
@@ -38,8 +39,8 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
   if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-cyan-500"/></div>;
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-950">
-       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col space-y-8">
+    <div className="p-8 h-full flex flex-col bg-slate-950 overflow-hidden">
+       <div className="max-w-7xl mx-auto w-full h-full flex flex-col gap-8">
          
          <div className="flex items-center justify-between shrink-0">
             <div>
@@ -51,7 +52,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
             </Button>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 content-start overflow-y-auto">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 content-start overflow-y-auto min-h-0 pr-2">
             {/* Create New Card Always Visible or First? Let's keep it first in list or separate. 
                 Common UX is to have it as the first item of the list, 
                 but for pagination, usually it's a separate action or part of the first page.
@@ -73,11 +74,11 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
             {currentDashboards.map((dash) => (
                <div 
                  key={dash.id}
-                 className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col"
+                 className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all cursor-pointer flex flex-col min-h-[280px]"
                  onClick={() => onSelect(dash)}
                >
                  {/* Thumbnail / Header */}
-                 <div className={`h-32 w-full ${dash.thumbnailColor} relative flex items-center justify-center border-b border-slate-800/50`}>
+                 <div className={`h-32 w-full ${dash.thumbnailColor} relative flex items-center justify-center border-b border-slate-800/50 shrink-0`}>
                     <BarChart3 className="text-white/20 w-16 h-16" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -93,7 +94,7 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
                       <p className="text-sm text-slate-500 line-clamp-2 mb-4">{dash.description}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-800/50 text-xs text-slate-400">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-800/50 text-xs text-slate-400 mt-auto">
                        <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1.5"><LayoutGrid size={12}/> {dash.widgetCount} {t('dashboard.widgets')}</span>
                           <span className="flex items-center gap-1.5"><Clock size={12}/> {dash.updatedAt}</span>
@@ -105,13 +106,15 @@ export const DashboardList: React.FC<DashboardListProps> = ({ onSelect, onCreate
             ))}
          </div>
 
-         <Pagination 
-            currentPage={currentPage}
-            totalItems={dashboards.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-        />
+         <div className="shrink-0">
+            <Pagination 
+                currentPage={currentPage}
+                totalItems={dashboards.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+            />
+         </div>
        </div>
     </div>
   );

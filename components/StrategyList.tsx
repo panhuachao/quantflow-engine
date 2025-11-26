@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { StrategyItem } from '../types';
 import { Button } from './ui/Button';
@@ -46,8 +47,8 @@ export const StrategyList: React.FC<StrategyListProps> = ({ onSelect, onCreate }
   if (loading) return <div className="h-full flex items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-purple-500"/></div>;
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-950">
-      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col space-y-8">
+    <div className="p-8 h-full flex flex-col bg-slate-950 overflow-hidden">
+      <div className="max-w-6xl mx-auto w-full h-full flex flex-col gap-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
           <div>
             <h2 className="text-3xl font-bold text-slate-100">{t('strategy.title')}</h2>
@@ -70,7 +71,7 @@ export const StrategyList: React.FC<StrategyListProps> = ({ onSelect, onCreate }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 flex-1 overflow-y-auto content-start">
+        <div className="grid grid-cols-1 gap-4 flex-1 overflow-y-auto content-start min-h-0 pr-2">
           {currentStrategies.length === 0 ? (
              <div className="text-center py-20 text-slate-500">No strategies found.</div>
           ) : (
@@ -133,13 +134,15 @@ export const StrategyList: React.FC<StrategyListProps> = ({ onSelect, onCreate }
           )}
         </div>
 
-        <Pagination 
-            currentPage={currentPage}
-            totalItems={filteredStrategies.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-        />
+        <div className="shrink-0">
+            <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredStrategies.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+            />
+        </div>
       </div>
     </div>
   );
