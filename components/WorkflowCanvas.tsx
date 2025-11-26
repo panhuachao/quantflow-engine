@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { NodeData, Connection, NodeType, Workflow, LogEntry, ExecutionHistoryItem } from '../types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from '../constants';
@@ -423,7 +422,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
         </div>
 
         {/* View Controls */}
-        <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
+        <div className="absolute bottom-16 left-6 flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1 shadow-xl z-20">
             <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="p-2 text-slate-400 hover:text-white rounded"><Minus size={16} /></button>
             <div className="text-xs font-mono text-slate-500 w-12 text-center select-none">{Math.round(zoom * 100)}%</div>
             <button onClick={() => setZoom(z => Math.min(2.0, z + 0.1))} className="p-2 text-slate-400 hover:text-white rounded"><Plus size={16} /></button>
@@ -433,7 +432,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ workflow, onSave
         </div>
 
         {/* Execute Button - MOVED TO CENTER BOTTOM */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20">
            <Button size="lg" className={`rounded-full shadow-2xl pl-6 pr-8 py-4 border-4 border-slate-900 ${isRunning ? 'bg-slate-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}`} onClick={runSimulation} disabled={isRunning}>
               <div className="flex items-center gap-3">
                  {isRunning ? <Clock className="w-5 h-5 animate-spin" /> : <PlayCircle fill="currentColor" className="w-5 h-5" />}
